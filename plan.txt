@@ -1,0 +1,28 @@
+Monopoly Rules:
+Goes from player 1 -> 2 -> 3 -> 4 -> ... -> 1 (Use Modulo)
+Must roll dice (unless jailed)
+If a player lands on an unowned property, they must buy or auction
+If a player lands on an owned property that is unmortgaged, they must pay rent
+If a player lands on luxury tax, he/she must pay the bank 100$
+If a player lands on income tax, he/she must pay the bank 200$
+If a player lands on a chance or community chest, player must take a card and follow instructions
+If a player passes Go, they get 200$
+Players can sell houses back to the bank for half the purchase price
+
+Player must have monopoly for houses to be put
+Player must evenly put houses on properties
+Player cannot have houses on property if any other property in a set is mortgaged, and must remove houses to mortgage properties
+
+If a player rolls doubles for a third time, they go to jail
+If a player is in jail, they can roll doubles and get out
+If a player is in jail, they can pay 50$ and skip a turn to get out
+If a player is in jail for 3 turns, they must pay 50$ and skip a turn 
+
+[0 - 63] Properties owned, 0 unpurchased, 1 purchased, 2 mortgaged
+[64 - 64+6*32=255] Houses on monopolies
+[256 - 256+6*12=327] Hotels on monopolies
+6*n bits for position
+n bits for jailed Players
+
+We should store deltas instead of full game states
+

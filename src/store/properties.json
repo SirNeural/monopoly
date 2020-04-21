@@ -1,0 +1,200 @@
+{
+  "spaces": [
+    "Go",
+    "Mediterranean Avenue",
+    "Community Chest",
+    "Baltic Avenue",
+    "Income Tax",
+    "Reading Railroad",
+    "Oriental Avenue",
+    "Chance",
+    "Vermont Avenue",
+    "Connecticut Avenue",
+    "Jail",
+    "St. Charles Place",
+    "Electric Company",
+    "States Avenue",
+    "Virginia Avenue",
+    "Pennsylvania Railroad",
+    "St. James Place",
+    "Community Chest",
+    "Tennessee Avenue",
+    "New York Avenue",
+    "Free Parking",
+    "Kentucky Avenue",
+    "Chance",
+    "Indiana Avenue",
+    "Illinois Avenue",
+    "B & O Railroad",
+    "Atlantic Avenue",
+    "Ventnor Avenue",
+    "Waterworks",
+    "Marvin Gardens",
+    "Go to Jail",
+    "Pacific Avenue",
+    "N. Carolina Avenue",
+    "Community Chest",
+    "Pennsylvania Avenue",
+    "Short Line",
+    "Chance",
+    "Park Place",
+    "Luxury Tax",
+    "Boardwalk"
+  ],
+  "properties": {
+    "Mediterranean Avenue": {
+      "price": 60,
+      "house": 50,
+      "rent": [2, 10, 30, 90, 160, 250],
+      "mortgage": 30,
+      "color": "pink-800"
+    },
+    "Baltic Avenue": {
+      "price": 60,
+      "house": 50,
+      "rent": [4, 20, 60, 180, 320, 450],
+      "mortgage": 30,
+      "color": "pink-800"
+    },
+    "Oriental Avenue": {
+      "price": 100,
+      "house": 50,
+      "rent": [6, 30, 90, 270, 400, 550],
+      "mortgage": 50,
+      "color": "blue-300"
+    },
+    "Vermont Avenue": {
+      "price": 100,
+      "house": 50,
+      "rent": [6, 30, 90, 270, 400, 550],
+      "mortgage": 50,
+      "color": "blue-300"
+    },
+    "Connecticut Avenue": {
+      "price": 120,
+      "house": 50,
+      "rent": [8, 40, 100, 300, 450, 600],
+      "mortgage": 60,
+      "color": "blue-300"
+    },
+    "St. Charles Place": {
+      "price": 140,
+      "house": 100,
+      "rent": [10, 50, 150, 450, 625, 750],
+      "mortgage": 70,
+      "color": "pink-700"
+    },
+    "States Avenue": {
+      "price": 140,
+      "house": 100,
+      "rent": [10, 50, 150, 450, 625, 750],
+      "mortgage": 70,
+      "color": "pink-700"
+    },
+    "Virginia Avenue": {
+      "price": 160,
+      "house": 100,
+      "rent": [12, 60, 180, 500, 700, 900],
+      "mortgage": 80,
+      "color": "pink-700"
+    },
+    "St. James Place": {
+      "price": 180,
+      "house": 100,
+      "rent": [14, 70, 200, 550, 750, 950],
+      "mortgage": 90,
+      "color": "orange-400"
+    },
+    "Tennessee Avenue": {
+      "price": 180,
+      "house": 100,
+      "rent": [14, 70, 200, 550, 750, 950],
+      "mortgage": 90,
+      "color": "orange-400"
+    },
+    "New York Avenue": {
+      "price": 200,
+      "house": 100,
+      "rent": [16, 80, 220, 600, 800, 1000],
+      "mortgage": 100,
+      "color": "orange-400"
+    },
+    "Kentucky Avenue": {
+      "price": 220,
+      "house": 150,
+      "rent": [18, 90, 250, 700, 875, 1050],
+      "mortgage": 110,
+      "color": "red-600"
+    },
+    "Indiana Avenue": {
+      "price": 220,
+      "house": 150,
+      "rent": [18, 90, 250, 700, 875, 1050],
+      "mortgage": 110,
+      "color": "red-600"
+    },
+    "Illinois Avenue": {
+      "price": 240,
+      "house": 150,
+      "rent": [20, 100, 300, 750, 925, 1100],
+      "mortgage": 120,
+      "color": "red-600"
+    },
+    "Atlantic Avenue": {
+      "price": 260,
+      "house": 150,
+      "rent": [22, 110, 330, 800, 975, 1150],
+      "mortgage": 130,
+      "color": "yellow-300"
+    },
+    "Ventnor Avenue": {
+      "price": 260,
+      "house": 150,
+      "rent": [22, 110, 330, 800, 975, 1150],
+      "mortgage": 130,
+      "color": "yellow-300"
+    },
+    "Marvin Gardens": {
+      "price": 280,
+      "house": 150,
+      "rent": [24, 120, 360, 850, 1025, 1200],
+      "mortgage": 140,
+      "color": "yellow-300"
+    },
+    "Pacific Avenue": {
+      "price": 300,
+      "house": 200,
+      "rent": [26, 130, 390, 900, 1100, 1275],
+      "mortgage": 150,
+      "color": "green-500"
+    },
+    "N. Carolina Avenue": {
+      "price": 300,
+      "house": 200,
+      "rent": [26, 130, 390, 900, 1100, 1275],
+      "mortgage": 150,
+      "color": "green-500"
+    },
+    "Pennsylvania Avenue": {
+      "price": 320,
+      "house": 200,
+      "rent": [28, 150, 450, 1000, 1200, 1400],
+      "mortgage": 160,
+      "color": "green-500"
+    },
+    "Park Place": {
+      "price": 350,
+      "house": 200,
+      "rent": [35, 175, 500, 1100, 1300, 1500],
+      "mortgage": 175,
+      "color": "blue-500"
+    },
+    "Boardwalk": {
+      "price": 400,
+      "house": 200,
+      "rent": [50, 200, 600, 1400, 1700, 2000],
+      "mortgage": 200,
+      "color": "blue-500"
+    }
+  }
+}
