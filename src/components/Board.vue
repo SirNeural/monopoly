@@ -157,7 +157,7 @@ export default {
   },
   methods: {
     rotate() {
-      console.log("rotating");
+      // console.log("rotating");
       this.three.camera.rotation.y = this.three.camera.rotation.y + Math.PI / 2;
     },
     rollDice() {
@@ -184,7 +184,7 @@ export default {
           username: this.username,
           userID: user.id
         });
-        console.log(user.id);
+        // console.log(user.id);
         this.$store.dispatch("setPeer", user.id);
         this.openPeer();
         return true;

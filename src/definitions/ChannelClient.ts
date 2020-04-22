@@ -2,7 +2,7 @@ import { ChannelClientInterface } from '@statechannels/channel-client';
 import { Message, Participant, Allocation, ChannelResult } from '@statechannels/client-api-schema';
 import { ChannelState, toChannelState } from './Channel';
 import { AppData, encodeAppData } from './Monopoly'
-import { CONTRACT_ADDRESS } from '../constants/config';
+import { CONTRACT_ADDRESS } from '../constants';
 
 export class ChannelClient {
   constructor(private readonly channelClient: ChannelClientInterface) { }

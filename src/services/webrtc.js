@@ -1,6 +1,6 @@
 import Peer from "peerjs";
 
-import { WEBRTC_SERVER, WEBRTC_API_KEY, WEBRTC_PORT } from '../constants/config';
+import { WEBRTC_SERVER, WEBRTC_API_KEY, WEBRTC_PORT } from '../constants';
 
 import short from 'short-uuid';
 
