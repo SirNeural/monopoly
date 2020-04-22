@@ -1,7 +1,8 @@
 {
   "compilerOptions": {
-    "target": "esnext",
-    "module": "esnext",
+    "target": "es6",
+    "module": "commonjs",
+    "outDir": "dist",
     "strict": true,
     "jsx": "preserve",
     "importHelpers": true,
@@ -11,6 +12,7 @@
     "esModuleInterop": true,
     "noImplicitAny": false, // Remove once fully converted
     "allowSyntheticDefaultImports": true,
+    "resolveJsonModule": true,
     "sourceMap": true,
     "baseUrl": ".",
     "types": [
@@ -33,9 +35,16 @@
     "src/**/*.tsx",
     "src/**/*.vue",
     "tests/**/*.ts",
-    "tests/**/*.tsx", "src/services/blockchain.ss", "src/definitions/ChannelClient.ts"
+    "tests/**/*.tsx", "./scripts", "./test",
   ],
   "exclude": [
     "node_modules"
+  ],
+  "files": [
+    "./buidler.config.ts",
+    "node_modules/@nomiclabs/buidler-ethers/src/type-extensions.d.ts",
+    "node_modules/@nomiclabs/buidler-etherscan/src/type-extensions.d.ts",
+    "node_modules/@nomiclabs/buidler-waffle/src/type-extensions.d.ts",
+    "node_modules/buidler-typechain/src/type-extensions.d.ts"
   ]
 }

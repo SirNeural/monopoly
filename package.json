@@ -9,10 +9,10 @@
     "test": "npx buidler test",
     "lint": "vue-cli-service lint",
     "deploy": "npx buidler run --network buidlerevm scripts/deploy.ts",
-    "build:contracts": "npm run compile && npx buidler typechain",
+    "build:contracts": "yarn compile && npx buidler typechain",
     "build:web": "vue-cli-service build",
     "compile": "npx buidler compile",
-    "coverage": "npm run build && npx buidler coverage --temp artifacts --network coverage",
+    "coverage": "yarn build && npx buidler coverage --temp artifacts --network coverage",
     "deploy:local": "npx buidler run --network localhost scripts/deploy.ts",
     "lint:fix": "eslint --fix . --ext .js,.vue src/components",
     "postinstall": "patch-package"
