@@ -10,6 +10,7 @@
     "lint": "vue-cli-service lint",
     "deploy": "npx buidler run --network buidlerevm scripts/deploy.ts",
     "build": "yarn build:contracts && yarn build:web",
+    "build:now": "git clone https://github.com/statechannels/monorepo.git && cd monorepo.git && yarn && cd packages/nitro-protocol && yarn link && cd ../channel-client && yarn link && cd ../channel-provider && yarn link && cd ../client-api-schema && yarn link && cd ../../../ && vue-cli-service build",
     "build:contracts": "yarn compile && npx buidler typechain",
     "build:web": "vue-cli-service build",
     "compile": "npx buidler compile",
@@ -17,6 +18,7 @@
     "deploy:local": "npx buidler run --network localhost scripts/deploy.ts",
     "lint:fix": "eslint --fix . --ext .js,.vue src/components",
     "link-statechannels": "yarn link @statechannels/nitro-protocol && yarn link @statechannels/channel-client && yarn link @statechannels/channel-provider && yarn link @statechannels/client-api-schema && yarn link @statechannels/devtools",
+    "preinstall": "npx typesync",
     "postinstall": "patch-package"
   },
   "dependencies": {
