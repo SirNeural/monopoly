@@ -59,10 +59,10 @@ contract Monopoly is ForceMoveApp {
         PositionType positionType;
         uint256 stake; // this is contributed by each player. If you win, you get your stake back as well as the stake of the other player. If you lose, you lose your stake.
         uint256 currentPlayer;
-        // uint256 moveNum;
-        uint256 numHouses; // find max and limit data structure
-        uint256 numHotels; // find max and limit data structure
         uint256 blockNum;
+        // uint256 moveNum;
+        uint8 houses; // find max and limit data structure
+        uint8 hotels; // find max and limit data structure
         // Num houses/hotels
         Player[] players;
     }

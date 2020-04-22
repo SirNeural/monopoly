@@ -1,4 +1,4 @@
-const sfc32 = (a, b, c, d) => {
+const sfc32 = (a: number, b: number, c: number, d: number) => {
   return () => {
     a >>>= 0;
     b >>>= 0;
@@ -15,7 +15,7 @@ const sfc32 = (a, b, c, d) => {
   };
 };
 
-const xmur3 = str => {
+const xmur3 = (str: String) => {
   for (var i = 0, h = 1779033703 ^ str.length; i < str.length; i++)
     h = Math.imul(h ^ str.charCodeAt(i), 3432918353);
   h = (h << 13) | (h >>> 19);

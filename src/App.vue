@@ -18,7 +18,6 @@ import Parking from "@/components/Parking.vue";
 import Property from "@/components/Property.vue";
 import Railroad from "@/components/Railroad.vue";
 import WaterWorks from "@/components/WaterWorks.vue";
-
 export default {
   name: "App",
   components: {
@@ -116,7 +115,6 @@ export default {
     const jail = this.elements[10];
     const parking = this.elements[20];
     const gotojail = this.elements[30];
-
     return createElement(Board, { props: { elements: this.elements } }, [
       center,
       go,

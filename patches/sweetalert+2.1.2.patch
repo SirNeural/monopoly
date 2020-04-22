@@ -1,0 +1,96 @@
+diff --git a/node_modules/sweetalert/LICENSE.md b/node_modules/sweetalert/LICENSE.md
+old mode 100644
+new mode 100755
+diff --git a/node_modules/sweetalert/README.md b/node_modules/sweetalert/README.md
+old mode 100644
+new mode 100755
+diff --git a/node_modules/sweetalert/dist/sweetalert.min.js b/node_modules/sweetalert/dist/sweetalert.min.js
+old mode 100644
+new mode 100755
+diff --git a/node_modules/sweetalert/typings/core.d.ts b/node_modules/sweetalert/typings/core.d.ts
+old mode 100644
+new mode 100755
+diff --git a/node_modules/sweetalert/typings/modules/actions.d.ts b/node_modules/sweetalert/typings/modules/actions.d.ts
+old mode 100644
+new mode 100755
+diff --git a/node_modules/sweetalert/typings/modules/class-list/index.d.ts b/node_modules/sweetalert/typings/modules/class-list/index.d.ts
+old mode 100644
+new mode 100755
+diff --git a/node_modules/sweetalert/typings/modules/event-listeners.d.ts b/node_modules/sweetalert/typings/modules/event-listeners.d.ts
+old mode 100644
+new mode 100755
+diff --git a/node_modules/sweetalert/typings/modules/init/buttons.d.ts b/node_modules/sweetalert/typings/modules/init/buttons.d.ts
+old mode 100644
+new mode 100755
+diff --git a/node_modules/sweetalert/typings/modules/init/content.d.ts b/node_modules/sweetalert/typings/modules/init/content.d.ts
+old mode 100644
+new mode 100755
+diff --git a/node_modules/sweetalert/typings/modules/init/icon.d.ts b/node_modules/sweetalert/typings/modules/init/icon.d.ts
+old mode 100644
+new mode 100755
+diff --git a/node_modules/sweetalert/typings/modules/init/index.d.ts b/node_modules/sweetalert/typings/modules/init/index.d.ts
+old mode 100644
+new mode 100755
+diff --git a/node_modules/sweetalert/typings/modules/init/modal.d.ts b/node_modules/sweetalert/typings/modules/init/modal.d.ts
+old mode 100644
+new mode 100755
+diff --git a/node_modules/sweetalert/typings/modules/init/overlay.d.ts b/node_modules/sweetalert/typings/modules/init/overlay.d.ts
+old mode 100644
+new mode 100755
+diff --git a/node_modules/sweetalert/typings/modules/init/text.d.ts b/node_modules/sweetalert/typings/modules/init/text.d.ts
+old mode 100644
+new mode 100755
+diff --git a/node_modules/sweetalert/typings/modules/markup/buttons.d.ts b/node_modules/sweetalert/typings/modules/markup/buttons.d.ts
+old mode 100644
+new mode 100755
+diff --git a/node_modules/sweetalert/typings/modules/markup/content.d.ts b/node_modules/sweetalert/typings/modules/markup/content.d.ts
+old mode 100644
+new mode 100755
+diff --git a/node_modules/sweetalert/typings/modules/markup/icons.d.ts b/node_modules/sweetalert/typings/modules/markup/icons.d.ts
+old mode 100644
+new mode 100755
+diff --git a/node_modules/sweetalert/typings/modules/markup/index.d.ts b/node_modules/sweetalert/typings/modules/markup/index.d.ts
+old mode 100644
+new mode 100755
+diff --git a/node_modules/sweetalert/typings/modules/markup/modal.d.ts b/node_modules/sweetalert/typings/modules/markup/modal.d.ts
+old mode 100644
+new mode 100755
+diff --git a/node_modules/sweetalert/typings/modules/markup/overlay.d.ts b/node_modules/sweetalert/typings/modules/markup/overlay.d.ts
+old mode 100644
+new mode 100755
+diff --git a/node_modules/sweetalert/typings/modules/options/buttons.d.ts b/node_modules/sweetalert/typings/modules/options/buttons.d.ts
+old mode 100644
+new mode 100755
+diff --git a/node_modules/sweetalert/typings/modules/options/content.d.ts b/node_modules/sweetalert/typings/modules/options/content.d.ts
+old mode 100644
+new mode 100755
+diff --git a/node_modules/sweetalert/typings/modules/options/deprecations.d.ts b/node_modules/sweetalert/typings/modules/options/deprecations.d.ts
+old mode 100644
+new mode 100755
+diff --git a/node_modules/sweetalert/typings/modules/options/index.d.ts b/node_modules/sweetalert/typings/modules/options/index.d.ts
+old mode 100644
+new mode 100755
+diff --git a/node_modules/sweetalert/typings/modules/state.d.ts b/node_modules/sweetalert/typings/modules/state.d.ts
+old mode 100644
+new mode 100755
+diff --git a/node_modules/sweetalert/typings/modules/utils.d.ts b/node_modules/sweetalert/typings/modules/utils.d.ts
+old mode 100644
+new mode 100755
+diff --git a/node_modules/sweetalert/typings/sweetalert.d.ts b/node_modules/sweetalert/typings/sweetalert.d.ts
+old mode 100644
+new mode 100755
+index f7220ea..0cf42ea
+--- a/node_modules/sweetalert/typings/sweetalert.d.ts
++++ b/node_modules/sweetalert/typings/sweetalert.d.ts
+@@ -1,9 +1,9 @@
+ import swal, { SweetAlert } from "./core";
+ 
+ declare global {
+-  const swal: SweetAlert;
++  const _swal: SweetAlert;
+   const sweetAlert: SweetAlert;
+ }
+ 
+-export default swal;
++export default _swal;
+ export as namespace swal;
