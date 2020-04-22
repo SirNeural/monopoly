@@ -17,7 +17,7 @@
     "coverage": "yarn build:contracts && npx buidler coverage --temp artifacts --network coverage",
     "deploy:local": "npx buidler run --network localhost scripts/deploy.ts",
     "lint:fix": "eslint --fix . --ext .js,.vue src/components",
-    "setup-statechannels": "cd .. && git clone https://github.com/statechannels/monorepo.git && cd monorepo && yarn && cd packages/nitro-protocol && yarn link && cd ../channel-client && yarn link && cd ../channel-provider && yarn link && cd ../client-api-schema && yarn link && cd ../xstate-wallet && yarn link && cd ../../../blockchain && yarn link-statechannels",
+    "setup-statechannels": "cd .. && git clone https://github.com/statechannels/monorepo.git && cd monorepo && yarn && cd packages/nitro-protocol && yarn link && cd ../channel-client && yarn link && cd ../channel-provider && yarn link && cd ../client-api-schema && yarn link && cd ../xstate-wallet && yarn link",
     "link-statechannels": "yarn link @statechannels/nitro-protocol && yarn link @statechannels/channel-client && yarn link @statechannels/channel-provider && yarn link @statechannels/client-api-schema && yarn link @statechannels/xstate-wallet",
     "preinstall": "npx typesync",
     "postinstall": "patch-package"
