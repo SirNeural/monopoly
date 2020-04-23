@@ -1,3 +1,4 @@
+// @ts-ignore
 import { ChannelResult, ChannelStatus, Participant, Allocation, Address, ChannelId, Uint256 } from '@statechannels/client-api-schema';
 
 import {
