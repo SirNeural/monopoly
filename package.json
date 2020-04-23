@@ -10,7 +10,7 @@
     "lint": "vue-cli-service lint",
     "deploy": "npx buidler run --network buidlerevm scripts/deploy.ts",
     "build": "yarn build:contracts && yarn build:web",
-    "build:remote": "yarn setup-statechannels && yarn link-statechannels && vue-cli-service build",
+    "build:remote": "yarn setup-statechannels && yarn link-statechannels && yarn build",
     "build:contracts": "yarn compile && npx buidler typechain",
     "build:web": "vue-cli-service build",
     "compile": "npx buidler compile",
