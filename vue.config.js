@@ -1,4 +1,9 @@
 module.exports = {
+    devServer: {
+        watchOptions: {
+            poll: 1000
+        }
+    },
     chainWebpack: config => {
         config.module
             .rule('ts')

@@ -447,7 +447,7 @@ export default {
     this.three.scenes.css.add(this.three.table);
     // this.three.scenes.css.add(this.three.sprite);
     // this.three.scenes.css.add(this.three.control);
-    this.three.scenes.webgl.add(new THREE.AxesHelper(5));
+    // this.three.scenes.webgl.add(new THREE.AxesHelper(5));
 
     this.three.camera.position.z = 7.5;
 

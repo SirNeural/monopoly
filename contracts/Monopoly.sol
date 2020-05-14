@@ -7,18 +7,6 @@ import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@nomiclabs/buidler/console.sol";
 import "./PRNG.sol";
 
-
-/**
- * @dev The RockPaperScissors contract complies with the ForceMoveApp interface and implements a commit-reveal game of Rock Paper Scissors (henceforth Monopoly).
- * The following transitions are allowed:
- *
- * Start -> RoundProposed  [ PROPOSE ]
- * RoundProposed -> Start  [ REJECT ]
- * RoundProposed -> RoundAccepted [ ACCEPT ]
- * RoundAccepted -> Reveal [ REVEAL ]
- * Reveal -> Start [ FINISH ]
- *
- */
 contract Monopoly is ForceMoveApp {
     using SafeMath for uint256;
 
@@ -55,29 +43,55 @@ contract Monopoly is ForceMoveApp {
         // Trade
     }
 
+    enum SpaceType {
+        Corner,
+        Property,
+        Railroad,
+        Utility,
+        Card,
+        Tax
+    }
+    enum CardActionType {
+        PayMoney,
+        CollectMoney,
+        PayMoneyToAll,
+        CollectMoneyFromAll,
+        CollectMoneyFromBank,
+        GoToJail,
+        GetOutOfJailFree,
+        MoveSpaces,
+        MoveToSpace
+    }
+
+    struct Space {
+        SpaceType spaceType;
+        uint8[] prices;
+        address owner;
+        CardActionType action;
+    }
+
     struct MonopolyData {
         PositionType positionType;
         uint256 stake; // this is contributed by each player. If you win, you get your stake back as well as the stake of the other player. If you lose, you lose your stake.
-        uint256 currentPlayer;
         uint256 blockNum;
         // uint256 moveNum;
+        // uint8 currentPlayer;
         uint8 houses; // find max and limit data structure
         uint8 hotels; // find max and limit data structure
         // Num houses/hotels
         Player[] players;
+        Space[40] spaces;
     }
 
     struct Player {
-        bool jailed;
         string name;
-        address owner;
-        uint256 balance;
+        bool jailed;
+        uint32 balance;
         uint8 doublesRolled;
         uint8 position;
-        uint8[] propertiesOwned;
+        int8[] properties;
+        // -1 mortgaged, 0 unowned, 1 owned, 2 monopoly, 3 (1)house, 4 (2) houses, 5 (3) houses, 6 (4) houses, 7 (1) hotel
     }
-
-    mapping(address => string) public players;
 
     /**
      * @notice Decodes the appData.
@@ -161,7 +175,7 @@ contract Monopoly is ForceMoveApp {
             // Moving,
             require(
                 toGameData.positionType == PositionType.Action,
-                " may only transition to "
+                "Moving may only transition to Action"
             );
             requireValidMovingToAction(
                 fromAllocation,
