@@ -12,36 +12,32 @@ export enum PositionType {
     End
 }
 
-export interface Start {
+export interface HasStake {
     stake: Uint256;
+}
+
+export interface Start extends HasStake {
     type: PositionType.Start;
 }
-export interface Rolling {
-    stake: Uint256;
+export interface Rolling extends HasStake {
     type: PositionType.Rolling;
 }
-export interface Moving {
-    stake: Uint256;
+export interface Moving extends HasStake {
     type: PositionType.Moving;
 }
-export interface Action {
-    stake: Uint256;
+export interface Action extends HasStake {
     type: PositionType.Action;
 }
-export interface Maintenance {
-    stake: Uint256;
+export interface Maintenance extends HasStake {
     type: PositionType.Maintenance;
 }
-export interface NextPlayer {
-    stake: Uint256;
+export interface NextPlayer extends HasStake {
     type: PositionType.NextPlayer;
 }
-export interface Bankrupt {
-    stake: Uint256;
+export interface Bankrupt extends HasStake {
     type: PositionType.Bankrupt;
 }
-export interface End {
-    stake: Uint256;
+export interface End extends HasStake {
     type: PositionType.End;
 }
 
