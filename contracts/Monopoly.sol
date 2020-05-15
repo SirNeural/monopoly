@@ -79,8 +79,8 @@ contract Monopoly is ForceMoveApp {
         uint8 houses; // find max and limit data structure
         uint8 hotels; // find max and limit data structure
         // Num houses/hotels
-        Player[] players;
         Space[40] spaces;
+        Player[] players;
     }
 
     struct Player {

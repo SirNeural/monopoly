@@ -23,7 +23,7 @@ export function encodeAppData (appData: AppData): string {
 export function encodeMonopolyData (monopolyData: MonopolyData): string {
     return defaultAbiCoder.encode(
         [
-            'tuple(uint8 positionType, uint256 stake, uint256 currentPlayer, uint8 houses, uint8 hotels, Player[] players)',
+            'tuple(uint8 positionType, uint256 stake, uint8 currentPlayer, uint8 houses, uint8 hotels, Space[40] spaces, Player[] players)',
         ],
         [monopolyData]
     );
@@ -32,7 +32,7 @@ export function encodeMonopolyData (monopolyData: MonopolyData): string {
 export function decodeAppData (appDataBytes: string): AppData {
     const parameters = defaultAbiCoder.decode(
         [
-            'tuple(uint8 positionType, uint256 stake, uint256 currentPlayer, uint8 houses, uint8 hotels, Player[] players)',
+            'tuple(uint8 positionType, uint256 stake, uint8 currentPlayer, uint8 houses, uint8 hotels, Space[40] spaces, Player[] players)',
         ],
         appDataBytes
     )[0];

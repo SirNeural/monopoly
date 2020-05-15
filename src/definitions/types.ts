@@ -102,8 +102,8 @@ export interface MonopolyData {
     houses: number; // find max and limit data structure
     hotels: number; // find max and limit data structure
     // Num houses/hotels
-    players: Player[];
     spaces: Space[];
+    players: Player[];
 }
 
 export interface Player {
