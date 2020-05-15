@@ -3,7 +3,8 @@ import { ChannelClientInterface } from '@statechannels/channel-client';
 // @ts-ignore
 import { Message, Participant, Allocation, ChannelResult } from '@statechannels/client-api-schema';
 import { ChannelState, toChannelState } from './Channel';
-import { AppData, encodeAppData } from './Monopoly'
+import { encodeAppData } from './Monopoly'
+import { AppData } from './types'
 import { CONTRACT_ADDRESS } from '../constants';
 
 export class ChannelClient {

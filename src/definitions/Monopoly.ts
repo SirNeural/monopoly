@@ -1,85 +1,5 @@
-import { Player } from './Player'
+import { MonopolyData, AppData, PositionType } from './types';
 import { defaultAbiCoder, bigNumberify } from 'ethers/utils';
-export enum PositionType {
-    Start, // Setup game, allocate funds
-    Rolling, //
-    Moving,
-    Action,
-    Maintenance,
-    NextPlayer,
-    Bankrupt,
-    End
-}
-
-export interface Start {
-    stake: string;
-    type: PositionType.Start;
-}
-export interface Rolling {
-    stake: string;
-    type: PositionType.Rolling;
-}
-export interface Moving {
-    stake: string;
-    type: PositionType.Moving;
-}
-export interface Action {
-    stake: string;
-    type: PositionType.Action;
-}
-export interface Maintenance {
-    stake: string;
-    type: PositionType.Maintenance;
-}
-export interface NextPlayer {
-    stake: string;
-    type: PositionType.NextPlayer;
-}
-export interface Bankrupt {
-    stake: string;
-    type: PositionType.Bankrupt;
-}
-export interface End {
-    stake: string;
-    type: PositionType.End;
-}
-
-export type AppData = Start | Rolling | Moving | Action | Maintenance | NextPlayer | Bankrupt | End;
-
-
-export enum ActionType {
-    BuyProperty,
-    AuctionProperty,
-    PayRent,
-    PayUtilities,
-    PayIncomeTax,
-    PayLuxuryTax,
-    GoToJail,
-    CommunityCard,
-    ChanceCard,
-    FreeParking
-    //Pass Go?
-}
-export enum MaintainanceType {
-    MortgageProperty,
-    AddHouse,
-    RemoveHouse,
-    AddHotel,
-    RemoveHotel
-    // Trade
-}
-
-export interface MonopolyData {
-    positionType: PositionType;
-    stake: string; // this is contributed by each player. If you win, you get your stake back as well as the stake of the other player. If you lose, you lose your stake.
-    currentPlayer: number;
-    // moveNum: string;
-    blockNum: string;
-    houses: number; // find max and limit data structure
-    hotels: number; // find max and limit data structure
-    // Num houses/hotels
-    players: Player[];
-}
 
 function toMonopolyData (appData: AppData): MonopolyData {
     const defaults: MonopolyData = {
@@ -88,8 +8,9 @@ function toMonopolyData (appData: AppData): MonopolyData {
         currentPlayer: 0,
         houses: 32,
         hotels: 12,
-        blockNum: bigNumberify(0).toString(),
+        // blockNum: bigNumberify(0).toString(),
         players: [],
+        spaces: [], // initialize this to the spaces we defined
     };
 
     return { ...defaults, ...appData };

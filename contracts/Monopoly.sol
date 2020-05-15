@@ -73,9 +73,9 @@ contract Monopoly is ForceMoveApp {
     struct MonopolyData {
         PositionType positionType;
         uint256 stake; // this is contributed by each player. If you win, you get your stake back as well as the stake of the other player. If you lose, you lose your stake.
-        uint256 blockNum;
+        // uint256 blockNum;
         // uint256 moveNum;
-        // uint8 currentPlayer;
+        uint8 currentPlayer;
         uint8 houses; // find max and limit data structure
         uint8 hotels; // find max and limit data structure
         // Num houses/hotels
@@ -85,10 +85,12 @@ contract Monopoly is ForceMoveApp {
 
     struct Player {
         string name;
+        address id;
         bool jailed;
         uint32 balance;
         uint8 doublesRolled;
         uint8 position;
+        uint8 getOutOfJailFreeCards;
         int8[] properties;
         // -1 mortgaged, 0 unowned, 1 owned, 2 monopoly, 3 (1)house, 4 (2) houses, 5 (3) houses, 6 (4) houses, 7 (1) hotel
     }
