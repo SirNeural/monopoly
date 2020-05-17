@@ -73,6 +73,7 @@ contract Monopoly is ForceMoveApp {
     struct MonopolyData {
         PositionType positionType;
         uint256 stake; // this is contributed by each player. If you win, you get your stake back as well as the stake of the other player. If you lose, you lose your stake.
+        uint256 nonce;
         // uint256 blockNum;
         // uint256 moveNum;
         uint8 currentPlayer;
@@ -413,6 +414,19 @@ contract Monopoly is ForceMoveApp {
         );
 
         return allocation;
+    }
+
+    function rand(uint256 nonce, address sender, bytes32 channelId) public pure returns (uint256) {
+        return
+            uint256(
+                keccak256(
+                    abi.encodePacked(
+                        nonce + 1,
+                        sender,
+                        channelId
+                    )
+                )
+            );
     }
 
     modifier outcomeUnchanged(VariablePart memory a, VariablePart memory b) {

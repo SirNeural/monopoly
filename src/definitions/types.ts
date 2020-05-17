@@ -96,6 +96,7 @@ export interface Space {
 export interface MonopolyData {
     positionType: PositionType;
     stake: string; // this is contributed by each player. If you win, you get your stake back as well as the stake of the other player. If you lose, you lose your stake.
+    nonce: string;
     currentPlayer: number;
     // moveNum: string;
     // blockNum: string;

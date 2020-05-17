@@ -53,6 +53,7 @@ import * as CANNON from "cannon";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { DiceManager } from "threejs-dice/lib/dice.js";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
+import { SkeletonUtils } from "three/examples/jsm/utils/SkeletonUtils.js";
 // import { SkeletonUtils } from "three/examples/jsm/utils/SkeletonUtils.js";
 // import {
 //     PointerLockControls
@@ -70,7 +71,7 @@ export default {
       room: "",
       cornerrad: 0.58,
       tmp: new THREE.Vector3(),
-      three: { scenes: {}, renderers: {}, board: {}, pieces: [] },
+      three: { scenes: {}, renderers: {}, board: {}, pieces: [], mixers: [] },
       cannon: { dice: [] },
       models: {
         pig: {
@@ -158,7 +159,7 @@ export default {
   methods: {
     rotate() {
       // console.log("rotating");
-      this.three.camera.rotation.y = this.three.camera.rotation.y + Math.PI / 2;
+      this.three.camera.rotateY(90 * THREE.Math.DEG2RAD);
     },
     rollDice() {
       this.$store.dispatch("rollDice", this.username);
@@ -292,12 +293,13 @@ export default {
       idx |= 0;
       this.tmp.copy(this.cornerPoints[idx2]).multiplyScalar(frac);
 
-      this.three.pieces.forEach(piece => {
-        piece.position
-          .copy(this.cornerPoints[idx])
-          .multiplyScalar(1 - frac)
-          .add(this.tmp);
-      });
+      // this.three.pieces.forEach(piece => {
+      //   piece.position
+      //     .copy(this.cornerPoints[idx])
+      //     .multiplyScalar(1 - frac)
+      //     .add(this.tmp);
+      // });
+
       // this.three.controls.target.copy(this.three.pieces[0].position);
 
       // let cdist = this.three.pieces[0].localToWorld(this.tmp.copy(this.three.pieces[0].position)).sub(this.three.camera.position).length()
@@ -342,6 +344,32 @@ export default {
       DiceManager.prepareValues(diceValues);
     }
   },
+  modelInit() {
+    this.prepModelsAndAnimations();
+
+    Object.values(this.three.pieces).forEach((model, ndx) => {
+      const clonedScene = SkeletonUtils.clone(model.gltf.scene);
+      const root = new THREE.Object3D();
+      root.add(clonedScene);
+      this.three.board.center.add(root);
+      root.position.x = (ndx - 3) * 3;
+
+      const mixer = new THREE.AnimationMixer(clonedScene);
+      const firstClip = Object.values(model.animations)[0];
+      const action = mixer.clipAction(firstClip);
+      action.play();
+      this.three.mixers.push(mixer);
+    });
+  },
+  prepModelsAndAnimations() {
+    Object.values(this.three.pieces).forEach(model => {
+      const animsByName = {};
+      model.gltf.animations.forEach(clip => {
+        animsByName[clip.name] = clip;
+      });
+      model.animations = animsByName;
+    });
+  },
   beforeDestroy: function() {
     window.removeEventListener("resize", this.onWindowResize);
   },
@@ -355,6 +383,7 @@ export default {
       1000
     );
     this.three.camera.position.set(0, 3.5, 0);
+    this.three.camera.rotation.order = "YXZ";
 
     let light = new THREE.PointLight(0xffffff, 0.6, 100);
     light.position.set(1.5, 3.0, 1.5);
@@ -369,7 +398,7 @@ export default {
     this.three.scenes.webgl.add(light);
 
     let material = new THREE.MeshBasicMaterial();
-    material.color.set("black");
+    material.color.set("green");
     material.opacity = 0;
     material.side = THREE.DoubleSide;
     material.blending = THREE.NoBlending;
@@ -444,7 +473,9 @@ export default {
     this.three.scenes.webgl.add(this.three.board.outer);
 
     // this.three.scenes.css.add(this.three.controls.getObject());
+
     this.three.scenes.css.add(this.three.table);
+
     // this.three.scenes.css.add(this.three.sprite);
     // this.three.scenes.css.add(this.three.control);
     // this.three.scenes.webgl.add(new THREE.AxesHelper(5));
@@ -452,6 +483,10 @@ export default {
     this.three.camera.position.z = 7.5;
 
     // this.three.controls = new THREE.PointerLockControls(this.camera);
+    // OrbitControls.prototype.rotate = (angle) => {
+    //   this.rotateLeft(angle);
+    //   this.update();
+    // }
     this.three.controls = new OrbitControls(
       this.three.camera,
       this.three.renderers.css.domElement
@@ -500,10 +535,15 @@ export default {
     //     this.three.board.outer.add(this.three.pieces[0]);
     //   }
     // );
-    const gltfLoader = new GLTFLoader();
+
+    const manager = new THREE.LoadingManager();
+    manager.onLoad = this.modelInit;
+
+    const gltfLoader = new GLTFLoader(manager);
     for (const model of Object.values(this.models)) {
       gltfLoader.load(model.url, gltf => {
         model.gltf = gltf;
+        this.three.pieces.push(model);
       });
     }
 
