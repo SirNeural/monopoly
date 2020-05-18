@@ -30,9 +30,9 @@
         </div>
       </div>
       <div class="text-lg text-white normal-case">
-        <div v-if="lastRoll">
+        <div v-if="three.diceValues.length > 0 && dice.every(dice => dice.isFinished())">
           Last Roll:
-          {{ lastRoll ? Object.entries(lastRoll)[0][1].join(", ") : "" }}
+          {{ three.diceValues.map(dice => dice.value).join(", ") }}
         </div>
       </div>
       <div class="flex flex-col">
@@ -78,6 +78,7 @@ export default {
       world: {},
       dice: [],
       three: {
+        diceValues: [],
         scenes: {},
         renderers: {},
         board: {},
@@ -164,7 +165,7 @@ export default {
   methods: {
     rotate() {
       // console.log("rotating");
-      this.three.camera.rotateY(90 * THREE.Math.DEG2RAD);
+      this.three.controls.rotate(Math.PI / 2);
     },
     rollDice() {
       this.$store.dispatch("rollDice", this.username);
@@ -432,12 +433,13 @@ export default {
         this.dice[i]
           .getObject()
           .body.angularVelocity.set(
-            20 * Math.random() - 10,
-            20 * Math.random() - 10,
-            20 * Math.random() - 10
+            40 * Math.random() - 10,
+            40 * Math.random() - 10,
+            40 * Math.random() - 10
           );
-        diceValues.push({ dice: this.dice[i], value: 1 });
+        diceValues.push({ dice: this.dice[i], value: Math.floor(Math.random() * 6) + 1 });
       }
+      this.$set(this.three, "diceValues", diceValues);
       DiceManager.prepareValues(diceValues);
     }
   },
@@ -476,7 +478,7 @@ export default {
     this.three.controls.minPolarAngle = this.three.controls.maxPolarAngle =
       Math.PI * 0.3;
     this.three.controls.enableRotate = true;
-    this.three.controls.enablePan = true;
+    this.three.controls.enablePan = false;
     this.three.controls.zoomSpeed = 0.8;
     this.three.controls.rotateSpeed = 0.4;
     this.three.controls.update();
@@ -499,7 +501,7 @@ export default {
     this.three.gameObjectManager = new GameObjectManager();
 
     let material = new THREE.MeshBasicMaterial();
-    material.color.set("black");
+    material.color.set("green");
     material.opacity = 0;
     material.side = THREE.DoubleSide;
     material.blending = THREE.NoBlending;
