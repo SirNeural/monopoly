@@ -4,7 +4,7 @@
             <div class="name">{{ name }}</div>
             <div>
                 <svg
-                    :class="`w-16 h-16 text-${this.color} fill-current`"
+                    :class="`w-16 h-16 text-${this.color} fill-current mx-auto`"
                     viewBox="0 0 384.929 384.929"
                     xml:space="preserve"
                 >

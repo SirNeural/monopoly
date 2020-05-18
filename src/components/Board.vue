@@ -38,7 +38,7 @@
       <div class="flex flex-col">
         <button class="p-2 select-none text-xl text-white" @click="joinRoom">Join Room</button>
         <button class="p-2 select-none text-xl text-white" @click="createRoom">Create Room</button>
-        <button class="p-2 select-none text-xl text-white" @click="rollDice">Roll Dice</button>
+        <button class="p-2 select-none text-xl text-white" @click="randomDiceThrow">Roll Dice</button>
         <button class="p-2 select-none text-xl text-white" @click="rotate">Rotate</button>
       </div>
     </div>
@@ -50,14 +50,18 @@ import { mapGetters } from "vuex";
 import niceware from "niceware";
 import * as THREE from "three";
 import * as CANNON from "cannon";
-import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
-import { DiceManager } from "threejs-dice/lib/dice.js";
-import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
-import { SkeletonUtils } from "three/examples/jsm/utils/SkeletonUtils.js";
-// import { SkeletonUtils } from "three/examples/jsm/utils/SkeletonUtils.js";
+import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
+import { DiceManager, DiceD6 } from "../services/three/utils/dice";
+import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
+// import { SkeletonUtils } from "three/examples/jsm/utils/SkeletonUtils";
+import GameObjectManager from "../services/three/game/GameObjectManager";
+import Animal from "../services/three/game/Animal";
+// import CameraInfo from "../services/three/game/utils/CameraInfo";
+// import { emitNotes } from "../services/three/utils/corutines";
 // import {
-//     PointerLockControls
-// } from 'three/examples/jsm/controls/PointerLockControls';
+//   rand,
+// } from "../services/three/utils/utils";
+
 import {
   CSS3DObject,
   CSS3DSprite,
@@ -71,8 +75,24 @@ export default {
       room: "",
       cornerrad: 0.58,
       tmp: new THREE.Vector3(),
-      three: { scenes: {}, renderers: {}, board: {}, pieces: [], mixers: [] },
-      cannon: { dice: [] },
+      world: {},
+      dice: [],
+      three: {
+        scenes: {},
+        renderers: {},
+        board: {},
+        pieces: [],
+        mixers: [],
+        globals: {
+          debug: false,
+          time: 0,
+          moveSpeed: 16,
+          deltaTime: 0,
+          player: null,
+          kForward: new THREE.Vector3(0, 0, 1)
+        },
+        then: 0
+      },
       models: {
         pig: {
           url:
@@ -120,21 +140,6 @@ export default {
       sortedPlayers: "getSortedPlayers",
       lastRoll: "getLastRoll"
     }),
-    avatar() {
-      const random = Math.floor(Math.random() * 2);
-      const type = this.avatars[Object.keys(this.avatars)[random]];
-      return this.$icon(
-        {
-          prefix: Object.keys(this.avatars)[random],
-          iconName: type[Math.floor(Math.random() * type.length)]
-        },
-        {
-          transform: {
-            size: 128
-          }
-        }
-      );
-    },
     cornerPoints() {
       return [
         new THREE.Vector3(this.cornerrad, -this.cornerrad, 0),
@@ -276,35 +281,40 @@ export default {
         });
       });
     },
-    animate() {
-      this.cannon.world.step(1.0 / 60.0);
-      this.cannon.dice.forEach(dice => dice.updateMeshFromBody());
-      requestAnimationFrame(this.animate);
-      this.three.controls.update();
+    addLight(...pos) {
+      const color = 0xffffff;
+      const intensity = 1;
+      const light = new THREE.DirectionalLight(color, intensity);
+      light.castShadow = true;
+      light.position.set(...pos);
+      this.three.scenes.webgl.add(light);
+      this.three.scenes.webgl.add(light.target);
+    },
+    updatePhysics() {
+      this.world.step(1.0 / 60.0);
+
+      for (var i in this.dice) {
+        this.dice[i].updateMeshFromBody();
+      }
+    },
+    animate(now) {
+      this.updatePhysics();
+      this.three.globals.time = now * 0.001;
+      this.three.globals.deltaTime = Math.min(
+        this.three.globals.time - this.three.then,
+        1 / 20
+      );
+      this.three.then = this.three.globals.time;
+
+      this.three.gameObjectManager.update();
+
       this.three.renderers.webgl.render(
         this.three.scenes.webgl,
         this.three.camera
       );
       this.three.renderers.css.render(this.three.scenes.css, this.three.camera);
-      let time = performance.now() * 0.0001;
-      let idx = time % 4;
-      let idx2 = (time + 1) % 4 | 0;
-      let frac = idx - (idx | 0);
-      idx |= 0;
-      this.tmp.copy(this.cornerPoints[idx2]).multiplyScalar(frac);
 
-      // this.three.pieces.forEach(piece => {
-      //   piece.position
-      //     .copy(this.cornerPoints[idx])
-      //     .multiplyScalar(1 - frac)
-      //     .add(this.tmp);
-      // });
-
-      // this.three.controls.target.copy(this.three.pieces[0].position);
-
-      // let cdist = this.three.pieces[0].localToWorld(this.tmp.copy(this.three.pieces[0].position)).sub(this.three.camera.position).length()
-      // this.three.pieces[0].localToWorld(this.tmp.copy(this.three.pieces[0].position))
-      // this.three.pieces[0].localToWorld(this.three.camera.position.copy(this.three.pieces[0].position)).normalize().multiplyScalar(cdist).add(this.tmp)
+      requestAnimationFrame(this.animate);
     },
     onWindowResize() {
       this.three.camera.aspect = window.innerWidth / window.innerHeight;
@@ -312,99 +322,189 @@ export default {
       this.three.renderers.css.setSize(window.innerWidth, window.innerHeight);
       this.three.renderers.webgl.setSize(window.innerWidth, window.innerHeight);
     },
+    init() {
+      this.prepModelsAndAnimations();
+
+      // const noteGO = this.three.gameObjectManager.createGameObject(
+      //   this.three.board.center,
+      //   "note"
+      // );
+
+      const animalModelNames = [
+        "pig",
+        "llama",
+        "pug",
+        "sheep",
+        "zebra",
+        "horse"
+      ];
+      const base = new THREE.Object3D();
+      const offset = new THREE.Object3D();
+      base.add(offset);
+      base.rotation.x = Math.PI / 2;
+
+      // position animals in a spiral.
+      const numAnimals = 7;
+      const arc = 10;
+      const b = 10 / (2 * Math.PI);
+      let r = 120;
+      let phi = r / b;
+      for (let i = 0; i < numAnimals; ++i) {
+        const name =
+          animalModelNames[
+            Math.floor(Math.random() * animalModelNames.length) | 0
+          ];
+        const gameObject = this.three.gameObjectManager.createGameObject(
+          this.three.board.outer,
+          name,
+          this.three.globals
+        );
+        gameObject.addComponent(Animal, this.models[name], this.three.globals);
+        base.rotation.y = phi;
+        offset.position.x = r;
+        offset.updateWorldMatrix(true, false);
+        offset.getWorldPosition(gameObject.transform.position);
+        phi += arc / r;
+        r = b * phi;
+      }
+    },
+    prepModelsAndAnimations() {
+      const box = new THREE.Box3();
+      const size = new THREE.Vector3();
+
+      for (let [key, value] of Object.entries(this.models)) {
+        box.setFromObject(value.gltf.scene);
+        box.getSize(size);
+        this.models[key].size = size.length();
+        const animsByName = {};
+
+        this.models[key].gltf.animations.forEach(clip => {
+          animsByName[clip.name] = clip;
+          // Should really fix this in .blend file
+          if (clip.name === "Walk") {
+            clip.duration /= 2;
+          }
+        });
+        this.models[key].animations = animsByName;
+      }
+    },
+    getCenterPoint(mesh) {
+      var geometry = mesh.geometry;
+      geometry.computeBoundingBox();
+      const center = geometry.boundingBox.getCenter();
+      // mesh.localToWorld(center);
+      return center;
+    },
+    squareNumToCoordinates(squareNum) {
+      // Find out which side
+      const quadrant = Math.floor(squareNum / 10);
+      const offset = squareNum % 10;
+      const y = 0; // constant
+      const x = offset * 1; // constant
+      const origin = this.getCenterPoint(this.three.board.outer);
+      const x_1 =
+        Math.cos((quadrant * Math.PI) / 2) * (x - origin.x) -
+        Math.sin((quadrant * Math.PI) / 2) * (y - origin.y) +
+        origin.x;
+      const y_1 =
+        Math.sin((quadrant * Math.PI) / 2) * (x - origin.x) +
+        Math.cos((quadrant * Math.PI) / 2) * (y - origin.y) +
+        origin.y;
+      return new THREE.Vector3(x_1, y_1, origin.z);
+    },
     randomDiceThrow() {
       let diceValues = [];
 
-      for (let i = 0; i < this.cannon.dice.length; i++) {
+      for (let i = 0; i < this.dice.length; i++) {
         let yRand = Math.random() * 20;
-        this.cannon.dice[i].getObject().position.x = -15 - (i % 3) * 1.5;
-        this.cannon.dice[i].getObject().position.y =
-          2 + Math.floor(i / 3) * 1.5;
-        this.cannon.dice[i].getObject().position.z = -15 + (i % 3) * 1.5;
-        this.cannon.dice[i].getObject().quaternion.x =
+        this.dice[i].getObject().position.x = -15 - (i % 3) * 1.5;
+        this.dice[i].getObject().position.y = 2 + Math.floor(i / 3) * 1.5;
+        this.dice[i].getObject().position.z = -15 + (i % 3) * 1.5;
+        this.dice[i].getObject().quaternion.x =
           ((Math.random() * 90 - 45) * Math.PI) / 180;
-        this.cannon.dice[i].getObject().quaternion.z =
+        this.dice[i].getObject().quaternion.z =
           ((Math.random() * 90 - 45) * Math.PI) / 180;
-        this.cannon.dice[i].updateBodyFromMesh();
+        this.dice[i].updateBodyFromMesh();
         let rand = Math.random() * 5;
-        this.cannon.dice[i]
+        this.dice[i]
           .getObject()
           .body.velocity.set(25 + rand, 40 + yRand, 15 + rand);
-        this.cannon.dice[i]
+        this.dice[i]
           .getObject()
           .body.angularVelocity.set(
             20 * Math.random() - 10,
             20 * Math.random() - 10,
             20 * Math.random() - 10
           );
-
-        diceValues.push({ dice: this.cannon.dice[i], value: i + 1 });
+        diceValues.push({ dice: this.dice[i], value: 1 });
       }
-
+      console.log(diceValues)
       DiceManager.prepareValues(diceValues);
     }
-  },
-  modelInit() {
-    this.prepModelsAndAnimations();
-
-    Object.values(this.three.pieces).forEach((model, ndx) => {
-      const clonedScene = SkeletonUtils.clone(model.gltf.scene);
-      const root = new THREE.Object3D();
-      root.add(clonedScene);
-      this.three.board.center.add(root);
-      root.position.x = (ndx - 3) * 3;
-
-      const mixer = new THREE.AnimationMixer(clonedScene);
-      const firstClip = Object.values(model.animations)[0];
-      const action = mixer.clipAction(firstClip);
-      action.play();
-      this.three.mixers.push(mixer);
-    });
-  },
-  prepModelsAndAnimations() {
-    Object.values(this.three.pieces).forEach(model => {
-      const animsByName = {};
-      model.gltf.animations.forEach(clip => {
-        animsByName[clip.name] = clip;
-      });
-      model.animations = animsByName;
-    });
   },
   beforeDestroy: function() {
     window.removeEventListener("resize", this.onWindowResize);
   },
   mounted() {
+    this.three.renderers.css = new CSS3DRenderer();
+    this.three.renderers.css.setSize(window.innerWidth, window.innerHeight);
+    this.three.renderers.css.domElement.style.position = "absolute";
+    this.three.renderers.css.domElement.style.top = 0;
+
+    this.three.renderers.webgl = new THREE.WebGLRenderer({ alpha: true });
+    this.three.renderers.webgl.setClearColor(0x00ff00, 0.0);
+    this.three.renderers.webgl.setSize(window.innerWidth, window.innerHeight);
+    this.three.renderers.webgl.domElement.style.position = "absolute";
+    this.three.renderers.webgl.domElement.style.zIndex = 1;
+    this.three.renderers.webgl.domElement.style.top = 0;
+    this.three.renderers.webgl.domElement.style.pointerEvents = "none"; // make pointer events passthru to CSS Renderer
+
     this.three.scenes.css = new THREE.Scene();
     this.three.scenes.webgl = new THREE.Scene();
     this.three.camera = new THREE.PerspectiveCamera(
       45,
       window.innerWidth / window.innerHeight,
       0.1,
-      1000
+      5000
     );
-    this.three.camera.position.set(0, 3.5, 0);
-    this.three.camera.rotation.order = "YXZ";
+    this.three.camera.position.set(0, 1150, 1150);
 
-    let light = new THREE.PointLight(0xffffff, 0.6, 100);
-    light.position.set(1.5, 3.0, 1.5);
-    this.three.scenes.webgl.add(light);
-    light.shadow.radius = 2.5;
-    light.castShadow = true;
+    this.three.controls = new OrbitControls(
+      this.three.camera,
+      this.three.renderers.css.domElement
+    );
+    this.three.controls.minPolarAngle = this.three.controls.maxPolarAngle =
+      Math.PI * 0.3;
+    this.three.controls.enableRotate = true;
+    this.three.controls.enablePan = false;
+    this.three.controls.zoomSpeed = 0.8;
+    this.three.controls.rotateSpeed = 0.4;
+    this.three.controls.update();
 
-    light = new THREE.PointLight(0xffffff, 0.6, 100);
-    light.position.set(-1.0, 3.0, -1.0);
-    light.castShadow = true;
-    light.shadow.radius = 2.5;
-    this.three.scenes.webgl.add(light);
+    this.addLight(5, 5, 2);
+    this.addLight(-5, 5, 5);
+
+    const manager = new THREE.LoadingManager();
+    manager.onLoad = this.init.bind(this);
+
+    {
+      const gltfLoader = new GLTFLoader(manager);
+      for (const model of Object.values(this.models)) {
+        gltfLoader.load(model.url, gltf => {
+          model.gltf = gltf;
+        });
+      }
+    }
+
+    this.three.gameObjectManager = new GameObjectManager();
 
     let material = new THREE.MeshBasicMaterial();
-    material.color.set("green");
+    material.color.set("black");
     material.opacity = 0;
     material.side = THREE.DoubleSide;
     material.blending = THREE.NoBlending;
 
     let geometry = new THREE.PlaneGeometry();
-    // let planeMesh = new THREE.Mesh(geometry, material);
 
     this.three.board.outer = new THREE.Mesh(geometry, material);
     this.three.board.outer.rotation.x = -Math.PI / 2;
@@ -418,49 +518,19 @@ export default {
     this.three.board.outer.add(this.three.board.center);
 
     this.three.table = new CSS3DObject(this.$refs.table);
-    this.three.table.scale.multiplyScalar(0.005);
-    this.three.table.position.y -= 8;
-    // this.three.table.position.z = -850;
+    // this.three.table.scale.multiplyScalar(0.5);
+    // this.three.table.position.y -= 8;
     this.three.table.rotation.x = -Math.PI / 2;
 
-    // Object.defineProperty(this.three.board.center, "position", {
-    //   value: this.three.table.position
-    // });
     Object.defineProperty(this.three.board.center, "rotation", {
       value: this.three.table.rotation
     });
 
-    // this.three.sprite = new CSS3DSprite(this.avatar.node[0]);
-    // this.three.sprite.position.z = -600;
-    // this.three.sprite.position.x = 100;
-    // this.three.sprite.position.y = 0;
-
     this.three.control = new CSS3DSprite(this.$refs.control);
-    // this.three.control.position.z = -800;
-    // this.three.control.position.x = window.innerWidth / 3 + 200;
-    // this.three.control.position.y = 0;
 
-    // this.three.scenes.webgl.add(planeMesh);
-    // this.three.control.position.x = 500;
-    // this.three.control.position.y = 0;
-    // this.three.control.position.z = -600;
-    // this.three.control.rotation.y = 2 * Math.PI;
+    this.three.scenes.webgl.add(this.three.board.outer);
 
-    // this.light = new THREE.HemisphereLight(0xffffbb, 0x080820, 1);
-
-    this.three.renderers.css = new CSS3DRenderer();
-    this.three.renderers.css.setSize(window.innerWidth, window.innerHeight);
-    this.three.renderers.css.domElement.style.position = "absolute";
-    this.three.renderers.css.domElement.style.top = 0;
-
-    this.three.renderers.webgl = new THREE.WebGLRenderer({ alpha: true });
-    this.three.renderers.webgl.setClearColor(0x00ff00, 0.0);
-    this.three.renderers.webgl.setSize(window.innerWidth, window.innerHeight);
-    this.three.renderers.webgl.domElement.style.position = "absolute";
-    this.three.renderers.webgl.domElement.style.zIndex = 1;
-    this.three.renderers.webgl.domElement.style.top = 0;
-    this.three.renderers.webgl.domElement.style.pointerEvents = "none";
-
+    this.three.scenes.css.add(this.three.table);
     this.three.renderers.css.domElement.appendChild(
       this.three.renderers.webgl.domElement
     );
@@ -469,86 +539,22 @@ export default {
       .getElementById("table")
       .appendChild(this.three.renderers.css.domElement);
 
-    // this.three.scenes.css.add(this.three.camera);
-    this.three.scenes.webgl.add(this.three.board.outer);
-
-    // this.three.scenes.css.add(this.three.controls.getObject());
-
-    this.three.scenes.css.add(this.three.table);
-
-    // this.three.scenes.css.add(this.three.sprite);
-    // this.three.scenes.css.add(this.three.control);
-    // this.three.scenes.webgl.add(new THREE.AxesHelper(5));
-
-    this.three.camera.position.z = 7.5;
-
-    // this.three.controls = new THREE.PointerLockControls(this.camera);
-    // OrbitControls.prototype.rotate = (angle) => {
-    //   this.rotateLeft(angle);
-    //   this.update();
-    // }
-    this.three.controls = new OrbitControls(
-      this.three.camera,
-      this.three.renderers.css.domElement
-    );
-    // this.three.controls.rotateSpeed = 0.8;
-    this.three.controls.minPolarAngle = this.three.controls.maxPolarAngle =
-      Math.PI * 0.3;
-    this.three.controls.enableRotate = true;
-    this.three.controls.enablePan = false;
-    this.three.controls.zoomSpeed = 0.8;
-    this.three.controls.rotateSpeed = 0.4;
-    // this.three.controls.panSpeed = 0.8;
-
-    this.cannon.world = new CANNON.World();
-
-    DiceManager.setWorld(this.cannon.world);
-
-    // this.cannon.dice.push(new DiceD6({ backColor: "blue" }));
-    // this.cannon.dice.push(new DiceD6({ backColor: "red" }));
-    this.cannon.dice.forEach(dice =>
-      this.three.board.center.add(dice.getObject())
-    );
-
+    this.world = new CANNON.World();
+    this.world.gravity.set(0, 0, -9.8 * 100);
+    this.world.broadphase = new CANNON.NaiveBroadphase();
+    this.world.solver.iterations = 16;
+    let floorBody = new CANNON.Body({mass: 0, shape: new CANNON.Plane(), material: DiceManager.floorBodyMaterial});
+    floorBody.quaternion.setFromAxisAngle(new CANNON.Vec3(0, 0, 1), -Math.PI / 2);
+    this.world.add(floorBody);
+    DiceManager.setWorld(this.world);
+    this.dice.push(new DiceD6({ size: 15, backColor: "#3182CE" }));
+    this.dice.push(new DiceD6({ size: 15, backColor: "#DD6B20" }));
+    this.dice.forEach(dice => {
+      this.three.board.center.add(dice.getObject());
+    });
     // setInterval(this.randomDiceThrow, 3000);
-
-    // this.randomDiceThrow();
-
-    // new GLTFLoader().load(
-    //   "https://cdn.glitch.com/346084eb-24bd-47ca-adb3-c3c4c4c9e56f%2Fmonopieces.glb?v=1583135864894",
-    //   gltf => {
-    //     let model = gltf.scene;
-    //     model.scale.multiplyScalar(0.006);
-
-    //     model.traverse(e => {
-    //       if (e.isMesh) e.castShadow = e.receiveShadow = true;
-    //     });
-
-    //     this.three.pieces.push(model.getObjectByName("node-0002").clone());
-    //     this.three.pieces[0].rotation.x = Math.PI / 2;
-    //     this.three.pieces[0].rotation.y = Math.PI / 2;
-    //     this.three.pieces[0].position.x -= 5;
-    //     this.three.pieces[0].position.x += 0.58;
-    //     this.three.pieces[0].position.y -= 0.58;
-    //     this.three.pieces[0].scale.multiplyScalar(0.01);
-
-    //     this.three.board.outer.add(this.three.pieces[0]);
-    //   }
-    // );
-
-    const manager = new THREE.LoadingManager();
-    manager.onLoad = this.modelInit;
-
-    const gltfLoader = new GLTFLoader(manager);
-    for (const model of Object.values(this.models)) {
-      gltfLoader.load(model.url, gltf => {
-        model.gltf = gltf;
-        this.three.pieces.push(model);
-      });
-    }
-
-    this.animate();
     window.addEventListener("resize", this.onWindowResize);
+    requestAnimationFrame(this.animate);
   }
 };
 </script>
@@ -561,21 +567,5 @@ export default {
 .shadow-xl {
   box-shadow: rgba(22, 31, 39, 0.42) 0px 60px 123px -25px,
     rgba(19, 26, 32, 0.08) 0px 35px 75px -35px;
-}
-/* .preserve-3d {
-  transform-style: preserve-3d;
-} */
-.threed {
-  transform: perspective(130em) rotateX(35deg) translateY(-10em);
-  backface-visibility: hidden;
-  -webkit-font-smoothing: antialiased;
-}
-.threed .anti-3d {
-  /* transform: perspective(0) rotateX(-35deg) translateZ(1em) translateX(-16em) */
-  /* translateY(-1em) rotateY(180deg); */
-  transform: translateX(1em) translateY(2.5em) translateZ(1em)
-    perspective(130em) rotateX(-35deg) rotateY(180deg);
-  filter: drop-shadow(-6px -6px 2px rgba(0, 0, 0, 0.7));
-  /* box-shadow: 0 10px 6px -6px rgba(0, 0, 0, 0.55); */
 }
 </style>

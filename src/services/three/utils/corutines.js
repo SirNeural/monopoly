@@ -1,12 +1,6 @@
 import Note from "../game/Note";
-import globals from "../globals";
 import {
-  aimTowardAndGetDistance,
   rand,
-  isClose,
-  minMagnitude,
-  resizeRendererToDisplaySize,
-  removeArrayElement
 } from "./utils";
 
 function* waitFrames(numFrames) {
@@ -24,7 +18,7 @@ function* waitSeconds(duration, deltaTime) {
   }
 }
 
-function* emitNotes(noteGO, subject) {
+function* emitNotes(noteGO, subject, globals) {
   for (;;) {
     yield waitSeconds(rand(0.5, 1), globals.deltaTime);
     noteGO.transform.position.copy(subject.gameObject.transform.position);

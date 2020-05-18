@@ -1,16 +1,18 @@
 import Component from "./Component";
 import * as THREE from "three";
-import { SkeletonUtils } from "../utils/SkeletonUtils";
-import globals from "../globals";
+import {
+  SkeletonUtils
+} from "three/examples/jsm/utils/SkeletonUtils";
 
 class SkinInstance extends Component {
-  constructor(gameObject, model) {
+  constructor(gameObject, model, globals) {
     super(gameObject);
     this.model = model;
     this.animRoot = SkeletonUtils.clone(this.model.gltf.scene);
     this.mixer = new THREE.AnimationMixer(this.animRoot);
     gameObject.transform.add(this.animRoot);
     this.actions = {};
+    this.globals = globals;
   }
 
   setAnimation(animName) {
@@ -28,7 +30,7 @@ class SkinInstance extends Component {
   }
 
   update() {
-    this.mixer.update(globals.deltaTime);
+    this.mixer.update(this.globals.deltaTime);
   }
 }
 

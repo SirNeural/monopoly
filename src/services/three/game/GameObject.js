@@ -7,6 +7,8 @@ class GameObject {
     this.name = name;
     this.components = [];
     this.transform = new THREE.Object3D();
+    this.transform.rotation.x = Math.PI / 2;
+    this.transform.scale.multiplyScalar(2);
     this.transform.name = name;
     this.parent = parent;
     this.globals = globals;

@@ -1,11 +1,7 @@
 import * as THREE from "three";
 import Component from "./Component";
-import StateDisplayHelper from "./utils/StateDisplayHelper";
-import FiniteStateMachine from "./FiniteStateMachine";
-import SkinInstance from "./SkinInstance";
 import CoroutineRunner from "./CoroutineRunner";
-import { rand, sClose, aimTowardAndGetDistance } from "../utils/utils";
-import globals from "../globals";
+import { rand } from "../utils/utils";
 
 function makeTextTexture(str) {
   const ctx = document.createElement("canvas").getContext("2d");
@@ -22,7 +18,7 @@ function makeTextTexture(str) {
 const noteTexture = makeTextTexture("♪");
 
 class Note extends Component {
-  constructor(gameObject) {
+  constructor(gameObject, globals) {
     super(gameObject);
     const { transform } = gameObject;
     const noteMaterial = new THREE.SpriteMaterial({
