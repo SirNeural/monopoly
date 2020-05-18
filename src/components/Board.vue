@@ -291,20 +291,20 @@ export default {
       this.three.scenes.webgl.add(light.target);
     },
     updatePhysics() {
-      this.world.step(1.0 / 60.0);
+      this.world.step(1/60.0);
 
       for (var i in this.dice) {
         this.dice[i].updateMeshFromBody();
       }
     },
     animate(now) {
-      this.updatePhysics();
       this.three.globals.time = now * 0.001;
       this.three.globals.deltaTime = Math.min(
         this.three.globals.time - this.three.then,
         1 / 20
       );
       this.three.then = this.three.globals.time;
+      this.updatePhysics();
 
       this.three.gameObjectManager.update();
 
@@ -438,7 +438,6 @@ export default {
           );
         diceValues.push({ dice: this.dice[i], value: 1 });
       }
-      console.log(diceValues)
       DiceManager.prepareValues(diceValues);
     }
   },
@@ -452,6 +451,7 @@ export default {
     this.three.renderers.css.domElement.style.top = 0;
 
     this.three.renderers.webgl = new THREE.WebGLRenderer({ alpha: true });
+    this.three.renderers.webgl.shadowMap.enabled = true;
     this.three.renderers.webgl.setClearColor(0x00ff00, 0.0);
     this.three.renderers.webgl.setSize(window.innerWidth, window.innerHeight);
     this.three.renderers.webgl.domElement.style.position = "absolute";
@@ -476,7 +476,7 @@ export default {
     this.three.controls.minPolarAngle = this.three.controls.maxPolarAngle =
       Math.PI * 0.3;
     this.three.controls.enableRotate = true;
-    this.three.controls.enablePan = false;
+    this.three.controls.enablePan = true;
     this.three.controls.zoomSpeed = 0.8;
     this.three.controls.rotateSpeed = 0.4;
     this.three.controls.update();
@@ -540,16 +540,20 @@ export default {
       .appendChild(this.three.renderers.css.domElement);
 
     this.world = new CANNON.World();
-    this.world.gravity.set(0, 0, -9.8 * 100);
-    this.world.broadphase = new CANNON.NaiveBroadphase();
-    this.world.solver.iterations = 16;
-    let floorBody = new CANNON.Body({mass: 0, shape: new CANNON.Plane(), material: DiceManager.floorBodyMaterial});
-    floorBody.quaternion.setFromAxisAngle(new CANNON.Vec3(0, 0, 1), -Math.PI / 2);
+    this.world.gravity.set(0, 0, -9.8 * 150);
+    let floorBody = new CANNON.Body({
+      mass: 0,
+      shape: new CANNON.Plane(),
+      material: DiceManager.floorBodyMaterial
+    });
+
     this.world.add(floorBody);
     DiceManager.setWorld(this.world);
     this.dice.push(new DiceD6({ size: 15, backColor: "#3182CE" }));
     this.dice.push(new DiceD6({ size: 15, backColor: "#DD6B20" }));
-    this.dice.forEach(dice => {
+    this.dice.forEach((dice, idx) => {
+      dice.getObject().castShadow = true;
+      dice.getObject().position.y = idx * 50;
       this.three.board.center.add(dice.getObject());
     });
     // setInterval(this.randomDiceThrow, 3000);

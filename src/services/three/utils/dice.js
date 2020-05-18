@@ -41,7 +41,7 @@ class DiceManagerClass {
      * @param {number} [diceValues.value]
      *
      */
-    prepareValues(diceValues) {
+    prepareValues (diceValues) {
         if (this.throwRunning) throw new Error('Cannot start another throw. Please wait, till the current throw is finished.');
 
         for (let i = 0; i < diceValues.length; i++) {
@@ -73,7 +73,6 @@ class DiceManagerClass {
             }
 
             if (allStable) {
-                console.log("all stable");
                 DiceManager.world.removeEventListener('postStep', check);
 
                 for (let i = 0; i < diceValues.length; i++) {
@@ -115,7 +114,7 @@ class DiceObject {
             specular: 0x172022,
             color: 0xf0f0f0,
             shininess: 40,
-            shading: THREE.FlatShading,
+            flatShading: true,
         };
         this.labelColor = options.fontColor;
         this.diceColor = options.backColor;
@@ -167,7 +166,7 @@ class DiceObject {
     }
 
     getUpsideValue() {
-        let vector = new THREE.Vector3(0, this.invertUpside ? -1 : 1);
+        let vector = new THREE.Vector3(0, 0, this.invertUpside ? -1 : 1);
         let closest_face;
         let closest_angle = Math.PI * 2;
         for (let i = 0; i < this.object.geometry.faces.length; ++i) {
@@ -180,7 +179,6 @@ class DiceObject {
                 closest_face = face;
             }
         }
-
         return closest_face.materialIndex - 1;
     }
 
@@ -390,7 +388,7 @@ class DiceObject {
 
     create() {
         if (!DiceManager.world) throw new Error('You must call DiceManager.setWorld(world) first.');
-        this.object = new THREE.Mesh(this.getGeometry(), new THREE.MultiMaterial(this.getMaterials()));
+        this.object = new THREE.Mesh(this.getGeometry(), this.getMaterials());
 
         this.object.reveiceShadow = true;
         this.object.castShadow = true;
