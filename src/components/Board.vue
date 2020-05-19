@@ -168,6 +168,7 @@ export default {
     rotate() {
       // console.log("rotating");
       this.three.controls.rotate(Math.PI / 2);
+      this.three.controls.update();
     },
     rollDice() {
       this.$store.dispatch("rollDice", this.username);
