@@ -1,4 +1,5 @@
 import Vue from 'vue'
+import { VNode } from 'vue/types';
 import swal from 'sweetalert'
 import App from './App.vue'
 import store from './store'
@@ -48,6 +49,19 @@ Vue.prototype.$strToHtml = (str: String) => {
     // template.innerHTML = '<div>' + str + '</div>';
     // return template.content.firstChild;
 };
+
+// Extract the function out, up here, so I'm not writing it twice
+const update = (el,
+    binding,
+    vnode: VNode,
+    oldVnode: VNode) => el.style.visibility = (binding.value) ? "hidden" : "";
+
+
+Vue.directive("hide", {
+    bind: update,
+    // Run on subsequent updates to the value supplied to the directive
+    update: update
+})
 
 new Vue({
     store,

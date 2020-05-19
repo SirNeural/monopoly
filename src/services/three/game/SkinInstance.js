@@ -15,7 +15,7 @@ class SkinInstance extends Component {
     this.globals = globals;
   }
 
-  setAnimation(animName) {
+  setAnimation(animName, clamp = false) {
     const clip = this.model.animations[animName];
     // turn off all current actions
     for (const action of Object.values(this.actions)) {
@@ -24,6 +24,8 @@ class SkinInstance extends Component {
     // get or create existing action for clip
     const action = this.mixer.clipAction(clip);
     action.enabled = true;
+    action.clampWhenFinished = clamp;
+    action.loop = clamp ? THREE.LoopOnce : THREE.LoopRepeat;
     action.reset();
     action.play();
     this.actions[animName] = action;

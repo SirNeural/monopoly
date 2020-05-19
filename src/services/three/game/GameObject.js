@@ -8,6 +8,10 @@ class GameObject {
     this.components = [];
     this.transform = new THREE.Object3D();
     this.transform.rotation.x = Math.PI / 2;
+    if(name == "llama" || name == "pug")
+      this.transform.scale.multiplyScalar(2);
+    else if (name == "sheep" || name == "horse" || name == "zebra")
+      this.transform.scale.multiplyScalar(1.5);
     this.transform.scale.multiplyScalar(2);
     this.transform.name = name;
     this.parent = parent;
