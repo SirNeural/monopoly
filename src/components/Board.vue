@@ -41,7 +41,6 @@
           {{ three.diceValues.map(dice => dice.value).join(", ") }}
         </div>
       </div>
-
     </div>
   </div>
 </template>
@@ -74,11 +73,12 @@ export default {
       angle: 0,
       username: "",
       room: "",
-      cornerrad: 0.58,
       tmp: new THREE.Vector3(),
       world: {},
       dice: [],
       pieces: [],
+      lastRoll: "",
+      position: 0,
       three: {
         diceValues: [],
         scenes: {},
@@ -136,23 +136,20 @@ export default {
   computed: {
     ...mapGetters({
       player: "getCurrentPlayer",
-      position: "getCurrentPlayerPosition",
+      // position: "getCurrentPlayerPosition",
       players: "getPlayers",
       avatars: "getAvatars",
       peer: "getPeer",
-      sortedPlayers: "getSortedPlayers",
-      lastRoll: "getLastRoll"
-    }),
-    cornerPoints() {
-      return [
-        new THREE.Vector3(this.cornerrad, -this.cornerrad, 0),
-        new THREE.Vector3(-this.cornerrad, -this.cornerrad, 0),
-        new THREE.Vector3(-this.cornerrad, this.cornerrad, 0),
-        new THREE.Vector3(this.cornerrad, this.cornerrad, 0)
-      ];
-    }
+      sortedPlayers: "getSortedPlayers"
+      // lastRoll: "getLastRoll"
+    })
   },
   watch: {
+    lastRoll(value) {
+      this.position += value
+        .split(", ")
+        .reduce((a, b) => Number(a) + Number(b), 0);
+    },
     position(value, old) {
       let delta = Math.floor(value / 10) - Math.floor(old / 10);
       if (delta < 0) {
@@ -162,6 +159,10 @@ export default {
       this.elements[value].componentInstance.active = true;
       this.elements[old].componentInstance.active = false;
       this.elements[value].componentInstance.popup();
+    },
+    angle(value) {
+      this.three.controls.rotationX.set(value);
+      this.three.controls.update();
     }
   },
   methods: {
@@ -297,7 +298,7 @@ export default {
       // this.three.scenes.webgl.add(helper);
     },
     updatePhysics() {
-      this.world.step(1/60.0);
+      this.world.step(1 / 60.0);
 
       for (var i in this.dice) {
         this.dice[i].updateMeshFromBody();
@@ -357,8 +358,12 @@ export default {
           name,
           this.three.globals
         );
-        gameObject.transform.position.copy(this.squareNumToCoordinates(i))
-        const animalComponent = gameObject.addComponent(Animal, this.models[name], this.three.globals);
+        gameObject.transform.position.copy(this.squareNumToCoordinates(i));
+        const animalComponent = gameObject.addComponent(
+          Animal,
+          this.models[name],
+          this.three.globals
+        );
         this.pieces.push(animalComponent);
       }
     },
@@ -388,7 +393,7 @@ export default {
     getCenterPoint(mesh) {
       let geometry = mesh.geometry;
       geometry.computeBoundingBox();
-      let center = new THREE.Vector3()
+      let center = new THREE.Vector3();
       geometry.boundingBox.getCenter(center);
       // mesh.localToWorld(center);
       return center;
@@ -397,8 +402,8 @@ export default {
       // Find out which side, width = 23, height = 28, total size = 263
       const quadrant = Math.floor(squareNum / 10);
       const offset = squareNum % 10;
-      const y = -131.5+14; // constant
-      const x = 117.5-5.5-(offset * 22.5)+(offset == 0 ? 5.5 : 0); // constant
+      const y = -131.5 + 14; // constant
+      const x = 117.5 - 5.5 - offset * 22.5 + (offset == 0 ? 5.5 : 0); // constant
       const origin = this.getCenterPoint(this.three.board.outer);
       const x_1 =
         Math.cos((-quadrant * Math.PI) / 2) * (x - origin.x) -
@@ -414,16 +419,33 @@ export default {
     randomDiceThrow() {
       let diceValues = [];
 
-for (var i = 0; i < this.dice.length; i++) {
-  this.dice[i].getObject().position.x = -1 * i * 15;
-            this.dice[i].getObject().position.z = i * 15;
-            this.dice[i].getObject().position.y = 1 * i * 15;
-            this.dice[i].getObject().quaternion.x = (Math.random()*90-45) * Math.PI / 180;
-            this.dice[i].getObject().quaternion.y = (Math.random()*90-45) * Math.PI / 180;
-            this.dice[i].getObject().body.velocity.set(80 * Math.random()-40, 80 * Math.random()-40, 525);
-            this.dice[i].getObject().body.angularVelocity.set(25 * Math.random() + 25, 25 * Math.random() + 25, 50 * Math.random());
-            this.dice[i].updateBodyFromMesh();
-        diceValues.push({ dice: this.dice[i], value: Math.floor(Math.random() * 6) + 1 });
+      for (var i = 0; i < this.dice.length; i++) {
+        this.dice[i].getObject().position.x = -1 * (i+1) * 15;
+        this.dice[i].getObject().position.z = 75;
+        this.dice[i].getObject().position.y = 1 * (i+1) * 15;
+        this.dice[i].getObject().quaternion.x =
+          ((Math.random() * 90 - 45) * Math.PI) / 180;
+        this.dice[i].getObject().quaternion.y =
+          ((Math.random() * 90 - 45) * Math.PI) / 180;
+        this.dice[i]
+          .getObject()
+          .body.velocity.set(
+            60 * Math.random() - 30,
+            60 * Math.random() - 30,
+            525
+          );
+        this.dice[i]
+          .getObject()
+          .body.angularVelocity.set(
+            25 * Math.random() + 25,
+            25 * Math.random() + 25,
+            50 * Math.random()
+          );
+        this.dice[i].updateBodyFromMesh();
+        diceValues.push({
+          dice: this.dice[i],
+          value: Math.floor(Math.random() * 6) + 1
+        });
       }
       this.$set(this.three, "diceValues", diceValues);
       DiceManager.prepareValues(diceValues);
@@ -457,9 +479,9 @@ for (var i = 0; i < this.dice.length; i++) {
     );
     this.three.camera.position.set(0, 1150, 1150);
 
-    let flashlight = new THREE.PointLight(0xFFFFFF, 0.75);
+    let flashlight = new THREE.PointLight(0xffffff, 0.75);
     this.three.camera.add(flashlight);
-    this.three.scenes.webgl.add(this.three.camera)
+    this.three.scenes.webgl.add(this.three.camera);
 
     this.three.controls = new OrbitControls(
       this.three.camera,
@@ -473,6 +495,26 @@ for (var i = 0; i < this.dice.length; i++) {
     this.three.controls.rotateSpeed = 0.4;
     this.three.controls.update();
 
+    // let ambientLight = new THREE.AmbientLight(0xf0f5fb, 0.3);
+    // this.three.scenes.webgl.add(ambientLight);
+
+    let mw = Math.max(window.innerHeight / 2, window.innerWidth / 2)
+    let light = new THREE.SpotLight(0xefdfd5, 1);
+    light.position.set(-mw / 2, mw * 2, mw / 2);
+    light.target.position.set(0, 0, 0);
+    light.distance = mw * 5;
+    light.castShadow = true;
+    light.shadowCameraNear = mw / 10;
+    light.shadowCameraFar = mw * 5;
+    light.shadowCameraFov = 50;
+    light.shadowBias = 0.001;
+    light.shadowDarkness = 1.1;
+    light.shadowMapWidth = 1024;
+    light.shadowMapHeight = 1024;
+    // let spotLightHelper = new THREE.SpotLightHelper(light)
+
+    this.three.scenes.webgl.add(light);
+    // this.three.scenes.webgl.add(spotLightHelper);
     this.addLight(0, 750, 0);
     // this.addLight(-1050, 1050, 1050);
 
@@ -496,8 +538,7 @@ for (var i = 0; i < this.dice.length; i++) {
     // material.side = THREE.DoubleSide;
     // material.blending = THREE.NoBlending;
     let material = new THREE.ShadowMaterial();
-    material.opacity = 0.9
-
+    material.opacity = 0.9;
 
     let geometry = new THREE.PlaneGeometry();
 
@@ -509,7 +550,7 @@ for (var i = 0; i < this.dice.length; i++) {
     this.three.board.center = new THREE.Mesh(geometry, material);
     this.three.board.outer.scale.multiplyScalar(0.755);
     this.three.board.center.receiveShadow = true;
-    let axesHelper = new THREE.AxesHelper(50); 
+    let axesHelper = new THREE.AxesHelper(50);
     this.three.board.center.add(axesHelper);
 
     this.three.board.outer.add(this.three.board.center);
@@ -540,7 +581,7 @@ for (var i = 0; i < this.dice.length; i++) {
       .appendChild(this.three.renderers.css.domElement);
 
     this.world = new CANNON.World();
-    this.world.gravity.set(0, 0, -9.8 * 100);
+    this.world.gravity.set(0, 0, -9.8 * 400);
     let floorBody = new CANNON.Body({
       mass: 0,
       shape: new CANNON.Plane(),
@@ -549,8 +590,8 @@ for (var i = 0; i < this.dice.length; i++) {
 
     this.world.add(floorBody);
     DiceManager.setWorld(this.world);
-    this.dice.push(new DiceD6({ size: 15, backColor: "#3182CE" }));
-    this.dice.push(new DiceD6({ size: 15, backColor: "#DD6B20" }));
+    this.dice.push(new DiceD6({ size: 15, backColor: "#202020" }));
+    this.dice.push(new DiceD6({ size: 15, backColor: "#202020" }));
     this.dice.forEach((dice, idx) => {
       dice.getObject().castShadow = true;
       this.three.board.center.add(dice.getObject());
@@ -569,7 +610,7 @@ for (var i = 0; i < this.dice.length; i++) {
   filter: brightness(95%);
 }
 .bg-gradient {
-  background-color: #4A5568;
+  background-color: #4a5568;
   /* background-image: linear-gradient(to right, #868f96 0%, #596164 100%); */
 }
 .shadow-xl {

@@ -21,19 +21,6 @@ contract Monopoly is ForceMoveApp {
         End
     }
 
-    enum ActionType {
-        BuyProperty,
-        AuctionProperty,
-        PayRent,
-        PayUtilities,
-        PayIncomeTax,
-        PayLuxuryTax,
-        GoToJail,
-        CommunityCard,
-        ChanceCard,
-        FreeParking
-        //Pass Go?
-    }
     enum MaintainanceType {
         MortgageProperty,
         AddHouse,
@@ -51,7 +38,8 @@ contract Monopoly is ForceMoveApp {
         Card,
         Tax
     }
-    enum CardActionType {
+
+    enum ActionType {
         PayMoney,
         CollectMoney,
         PayMoneyToAll,
@@ -60,14 +48,18 @@ contract Monopoly is ForceMoveApp {
         GoToJail,
         GetOutOfJailFree,
         MoveSpaces,
-        MoveToSpace
+        MoveToSpace,
+        MoveToNearestUtility,
+        MoveToNearestRailroad,
+        PropertyAssessment,
+        GeneralRepairs
     }
 
     struct Space {
         SpaceType spaceType;
         uint8[] prices;
         address owner;
-        CardActionType action;
+        ActionType action;
     }
 
     struct MonopolyData {
@@ -87,12 +79,13 @@ contract Monopoly is ForceMoveApp {
     struct Player {
         string name;
         address id;
-        bool jailed;
         uint32 balance;
+        uint8 jailed;
         uint8 doublesRolled;
         uint8 position;
         uint8 getOutOfJailFreeCards;
         int8[] properties;
+        uint8[2][] rolls;
         // -1 mortgaged, 0 unowned, 1 owned, 2 monopoly, 3 (1)house, 4 (2) houses, 5 (3) houses, 6 (4) houses, 7 (1) hotel
     }
 
@@ -151,7 +144,8 @@ contract Monopoly is ForceMoveApp {
                 fromAllocation,
                 toAllocation,
                 fromGameData,
-                toGameData
+                toGameData,
+                nParticipants
             );
             return true;
         } else if (fromGameData.positionType == PositionType.Rolling) {
@@ -161,7 +155,8 @@ contract Monopoly is ForceMoveApp {
                     fromAllocation,
                     toAllocation,
                     fromGameData,
-                    toGameData
+                    toGameData,
+                    nParticipants
                 );
                 return true;
             } else if (toGameData.positionType == PositionType.NextPlayer) {
@@ -169,7 +164,8 @@ contract Monopoly is ForceMoveApp {
                     fromAllocation,
                     toAllocation,
                     fromGameData,
-                    toGameData
+                    toGameData,
+                    nParticipants
                 );
                 return true;
             }
@@ -214,7 +210,8 @@ contract Monopoly is ForceMoveApp {
                     fromAllocation,
                     toAllocation,
                     fromGameData,
-                    toGameData
+                    toGameData,
+                    nParticipants
                 );
                 return true;
             } else if (toGameData.positionType == PositionType.Bankrupt) {
@@ -283,85 +280,137 @@ contract Monopoly is ForceMoveApp {
         Outcome.AllocationItem[] memory fromAllocation,
         Outcome.AllocationItem[] memory toAllocation,
         MonopolyData memory fromGameData,
-        MonopolyData memory toGameData
-    ) private pure stakeUnchanged(fromGameData, toGameData) {}
+        MonopolyData memory toGameData,
+        uint256 nParticipants
+    ) private pure stakeUnchanged(fromGameData, toGameData) currentPlayerUnchanged(fromGameData, toGameData) otherPlayersUnchanged(fromGameData, toGameData, nParticipants) playerPositionUnchanged(fromGameData, toGameData) {
+        uint8 currentPlayer = fromGameData.currentPlayer;
+        require(fromGameData.players[currentPlayer].rolls.length + 1 == toGameData.players[currentPlayer].rolls.length);
+        if(playerRolledDoubles(toGameData)) {
+            require(fromGameData.players[currentPlayer].doublesRolled + 1 == toGameData.players[currentPlayer].doublesRolled);
+        }
+    }
 
     function requireValidRollingToMoving(
         Outcome.AllocationItem[] memory fromAllocation,
         Outcome.AllocationItem[] memory toAllocation,
         MonopolyData memory fromGameData,
-        MonopolyData memory toGameData
-    ) private pure stakeUnchanged(fromGameData, toGameData) {}
+        MonopolyData memory toGameData,
+        uint256 nParticipants
+    ) private pure stakeUnchanged(fromGameData, toGameData) currentPlayerUnchanged(fromGameData, toGameData) otherPlayersUnchanged(fromGameData, toGameData, nParticipants) {
+        require(fromGameData.players[fromGameData.currentPlayer].jailed == 0);
+        require(fromGameData.players[fromGameData.currentPlayer].rolls.length == toGameData.players[fromGameData.currentPlayer].rolls.length);
+        uint8[2] memory roll = toGameData.players[toGameData.currentPlayer].rolls[toGameData.players[toGameData.currentPlayer].rolls.length - 1];
+        uint8 totalMovement = roll[0] + roll[1];
+        require(fromGameData.players[fromGameData.currentPlayer].position + totalMovement == toGameData.players[fromGameData.currentPlayer].position);
+        require(fromGameData.players[fromGameData.currentPlayer].position == toGameData.players[fromGameData.currentPlayer].position);
+    }
 
     function requireValidRollingToNextPlayer(
         Outcome.AllocationItem[] memory fromAllocation,
         Outcome.AllocationItem[] memory toAllocation,
         MonopolyData memory fromGameData,
-        MonopolyData memory toGameData
-    ) private pure stakeUnchanged(fromGameData, toGameData) {}
+        MonopolyData memory toGameData,
+        uint256 nParticipants
+    ) private pure stakeUnchanged(fromGameData, toGameData) {
+        require(fromGameData.players[fromGameData.currentPlayer].jailed > 0);
+        require(fromGameData.players[fromGameData.currentPlayer].jailed + 1 == toGameData.players[fromGameData.currentPlayer].jailed);
+        require((fromGameData.currentPlayer + 1) % nParticipants == toGameData.currentPlayer);
+        require((fromGameData.players[fromGameData.currentPlayer].jailed + 1) % 4 == toGameData.players[fromGameData.currentPlayer].jailed); // jailed, so increase the jail count
+        require(fromGameData.players[fromGameData.currentPlayer].position == toGameData.players[fromGameData.currentPlayer].position); // position same
+        // check position is in jail
+    }
 
     function requireValidMovingToAction(
         Outcome.AllocationItem[] memory fromAllocation,
         Outcome.AllocationItem[] memory toAllocation,
         MonopolyData memory fromGameData,
         MonopolyData memory toGameData
-    ) private pure stakeUnchanged(fromGameData, toGameData) {}
+    ) private pure stakeUnchanged(fromGameData, toGameData) currentPlayerUnchanged(fromGameData, toGameData) {
+        // switch(fromGameData.spaces[fromGameData.players[fromGameData.currentPlayer].position].action) {
+        // ActionType.PayMoney
+        // ActionType.CollectMoney
+        // ActionType.PayMoneyToAll
+        // ActionType.CollectMoneyFromAll
+        // ActionType.CollectMoneyFromBank
+        // ActionType.GoToJail
+        // ActionType.GetOutOfJailFree
+        // ActionType.MoveSpaces
+        // ActionType.MoveToSpace
+    }
 
     function requireValidActionToRolling(
         Outcome.AllocationItem[] memory fromAllocation,
         Outcome.AllocationItem[] memory toAllocation,
         MonopolyData memory fromGameData,
         MonopolyData memory toGameData
-    ) private pure stakeUnchanged(fromGameData, toGameData) {}
+    ) private pure stakeUnchanged(fromGameData, toGameData) currentPlayerUnchanged(fromGameData, toGameData) {
+        // jailed
+    }
 
     function requireValidActionToMaintainence(
         Outcome.AllocationItem[] memory fromAllocation,
         Outcome.AllocationItem[] memory toAllocation,
         MonopolyData memory fromGameData,
         MonopolyData memory toGameData
-    ) private pure stakeUnchanged(fromGameData, toGameData) {}
+    ) private pure stakeUnchanged(fromGameData, toGameData) currentPlayerUnchanged(fromGameData, toGameData) {
+        // maintainance actions, trades, hotels/houses/etc
+    }
 
     function requireValidMaintainenceToNextPlayer(
         Outcome.AllocationItem[] memory fromAllocation,
         Outcome.AllocationItem[] memory toAllocation,
         MonopolyData memory fromGameData,
-        MonopolyData memory toGameData
-    ) private pure stakeUnchanged(fromGameData, toGameData) {}
+        MonopolyData memory toGameData,
+        uint256 nParticipants
+    ) private pure stakeUnchanged(fromGameData, toGameData) otherPlayersUnchanged(fromGameData, toGameData, nParticipants) {
+        require((fromGameData.currentPlayer + 1) % nParticipants == toGameData.currentPlayer);
+
+    }
 
     function requireValidMaintainenceToBankrupt(
         Outcome.AllocationItem[] memory fromAllocation,
         Outcome.AllocationItem[] memory toAllocation,
         MonopolyData memory fromGameData,
         MonopolyData memory toGameData
-    ) private pure stakeUnchanged(fromGameData, toGameData) {}
+    ) private pure stakeUnchanged(fromGameData, toGameData) currentPlayerUnchanged(fromGameData, toGameData) {
+
+    }
 
     function requireValidNextPlayerToRolling(
         Outcome.AllocationItem[] memory fromAllocation,
         Outcome.AllocationItem[] memory toAllocation,
         MonopolyData memory fromGameData,
         MonopolyData memory toGameData
-    ) private pure stakeUnchanged(fromGameData, toGameData) {}
+    ) private pure stakeUnchanged(fromGameData, toGameData) {
+
+    }
 
     function requireValidBankruptToNextPlayer(
         Outcome.AllocationItem[] memory fromAllocation,
         Outcome.AllocationItem[] memory toAllocation,
         MonopolyData memory fromGameData,
         MonopolyData memory toGameData
-    ) private pure stakeUnchanged(fromGameData, toGameData) {}
+    ) private pure stakeUnchanged(fromGameData, toGameData) {
+
+    }
 
     function requireValidBankruptToEnd(
         Outcome.AllocationItem[] memory fromAllocation,
         Outcome.AllocationItem[] memory toAllocation,
         MonopolyData memory fromGameData,
         MonopolyData memory toGameData
-    ) private pure stakeUnchanged(fromGameData, toGameData) {}
+    ) private pure stakeUnchanged(fromGameData, toGameData) {
+
+    }
 
     function requireValidEndToStart(
         Outcome.AllocationItem[] memory fromAllocation,
         Outcome.AllocationItem[] memory toAllocation,
         MonopolyData memory fromGameData,
         MonopolyData memory toGameData
-    ) private pure stakeUnchanged(fromGameData, toGameData) {}
+    ) private pure stakeUnchanged(fromGameData, toGameData) {
+
+    }
 
     function _requireDestinationsUnchanged(
         Outcome.AllocationItem[] memory fromAllocation,
@@ -373,7 +422,7 @@ contract Monopoly is ForceMoveApp {
                 toAllocation[i].destination == fromAllocation[i].destination,
                 string(
                     abi.encodePacked(
-                        "RockPaperScissors: Destimation player ",
+                        "Monopoly: Destimation player ",
                         i,
                         " may not change"
                     )
@@ -427,6 +476,62 @@ contract Monopoly is ForceMoveApp {
                     )
                 )
             );
+    }
+
+    function playerHash(Player memory player) public pure returns (bytes32) {
+        return keccak256(abi.encode(player));
+    }
+
+    function playerRolledDoubles(MonopolyData memory toGameData) public pure returns (bool) {
+        uint8[2] memory roll = toGameData.players[toGameData.currentPlayer].rolls[toGameData.players[toGameData.currentPlayer].rolls.length - 1];
+        return roll[0] == roll[1];
+    }
+
+    modifier allParticipantsPlaying(MonopolyData memory fromGameData,
+        MonopolyData memory toGameData, uint256 nParticipants) {
+        require(fromGameData.players.length == nParticipants,
+        "Monopoly: All participants must be playing the game");
+        require(toGameData.players.length == nParticipants,
+        "Monopoly: All participants must be playing the game");
+        _;
+    }
+
+    modifier playerCountUnchanged(
+        MonopolyData memory fromGameData,
+        MonopolyData memory toGameData) {
+        require(fromGameData.players.length == toGameData.players.length,
+        "Monopoly: Cannot have new players joining after game has started");
+        _;
+    }
+
+    modifier currentPlayerUnchanged(
+        MonopolyData memory fromGameData,
+        MonopolyData memory toGameData) {
+        require(
+            fromGameData.currentPlayer == toGameData.currentPlayer,
+            "Monopoly: Player must not change between turns"
+        );
+        _;
+    }
+
+    modifier otherPlayersUnchanged(
+        MonopolyData memory fromGameData,
+        MonopolyData memory toGameData,
+        uint256 nParticipants) {
+        for(uint256 i = 0; i < nParticipants; i++) {
+            if(i != fromGameData.currentPlayer) {
+                require(playerHash(fromGameData.players[i]) == playerHash(toGameData.players[i]),
+                string(abi.encodePacked("Monopoly: Player ", i, " is not allowed to change outside of alloted turn")));
+            }
+        }
+        _;
+    }
+
+    modifier playerPositionUnchanged(
+        MonopolyData memory fromGameData,
+        MonopolyData memory toGameData) {
+        require(fromGameData.players[fromGameData.currentPlayer].position == toGameData.players[toGameData.currentPlayer].position);
+        _;
     }
 
     modifier outcomeUnchanged(VariablePart memory a, VariablePart memory b) {
