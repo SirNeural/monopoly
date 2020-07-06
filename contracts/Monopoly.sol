@@ -31,15 +31,25 @@ contract Monopoly is ForceMoveApp {
     }
 
     enum SpaceType {
-        Corner,
+        Go,
         Property,
         Railroad,
         Utility,
-        Card,
-        Tax
+        CommunityChest,
+        Chance,
+        Tax,
+        Jail,
+        FreeParking,
+        GoToJail
     }
 
     enum ActionType {
+        //Auction,
+        WaitingAction,
+        Jailed,
+        PurchaseSpace,
+        PayRent,
+        PayTax,
         PayMoney,
         CollectMoney,
         PayMoneyToAll,
@@ -56,14 +66,38 @@ contract Monopoly is ForceMoveApp {
     }
 
     struct Space {
+        uint8 id;
         SpaceType spaceType;
-        uint8[] prices;
+        uint8 status;
+        uint8[9] prices;
         address owner;
-        ActionType action;
+    }
+
+    enum PropertyStatus {
+        Unowned,
+        Owned,
+        Monopoly,
+        SingleHouse,
+        DoubleHouse,
+        TripleHouse,
+        QuadHouse,
+        Hotel
+        Mortgaged,
+    }
+    // -1 mortgaged, 0 unowned, 1 owned, 2 monopoly, 3 (1)house, 4 (2) houses, 5 (3) houses, 6 (4) houses, 7 (1) hotel
+    
+    struct Turn {
+        ActionType actionTaken;
+        uint8[2] roll;
+        uint8 player;
+        uint8 endPosition;
+        uint8 doublesRolled;
+        uint8 cardRoll;
     }
 
     struct MonopolyData {
         PositionType positionType;
+        bytes32 channelId;
         uint256 stake; // this is contributed by each player. If you win, you get your stake back as well as the stake of the other player. If you lose, you lose your stake.
         uint256 nonce;
         // uint256 blockNum;
@@ -73,7 +107,10 @@ contract Monopoly is ForceMoveApp {
         uint8 hotels; // find max and limit data structure
         // Num houses/hotels
         Space[40] spaces;
+        CommunityChest[17] commchests;
+        Chance[16] chances;
         Player[] players;
+        Turn[] turns;
     }
 
     struct Player {
@@ -84,10 +121,10 @@ contract Monopoly is ForceMoveApp {
         uint8 doublesRolled;
         uint8 position;
         uint8 getOutOfJailFreeCards;
-        int8[] properties;
-        uint8[2][] rolls;
-        // -1 mortgaged, 0 unowned, 1 owned, 2 monopoly, 3 (1)house, 4 (2) houses, 5 (3) houses, 6 (4) houses, 7 (1) hotel
+        
     }
+
+    // Random Instance; 0 - First Dice, 1 - Second Dice, 2 - Community/Chance Cards
 
     /**
      * @notice Decodes the appData.
@@ -282,9 +319,10 @@ contract Monopoly is ForceMoveApp {
         MonopolyData memory fromGameData,
         MonopolyData memory toGameData,
         uint256 nParticipants
-    ) private pure stakeUnchanged(fromGameData, toGameData) currentPlayerUnchanged(fromGameData, toGameData) otherPlayersUnchanged(fromGameData, toGameData, nParticipants) playerPositionUnchanged(fromGameData, toGameData) {
+    ) private pure stakeUnchanged(fromGameData, toGameData) currentPlayerUnchanged(fromGameData, toGameData) playerPositionUnchanged(fromGameData, toGameData) otherPlayersUnchanged(fromGameData, toGameData, nParticipants) {
         uint8 currentPlayer = fromGameData.currentPlayer;
-        require(fromGameData.players[currentPlayer].rolls.length + 1 == toGameData.players[currentPlayer].rolls.length);
+        require(fromGameData.turns.length + 1 == toGameData.turns.length);
+        require(fromGameData.players[currentPlayer].position == toGameData.players[currentPlayer].position);
         if(playerRolledDoubles(toGameData)) {
             require(fromGameData.players[currentPlayer].doublesRolled + 1 == toGameData.players[currentPlayer].doublesRolled);
         }
@@ -296,13 +334,17 @@ contract Monopoly is ForceMoveApp {
         MonopolyData memory fromGameData,
         MonopolyData memory toGameData,
         uint256 nParticipants
-    ) private pure stakeUnchanged(fromGameData, toGameData) currentPlayerUnchanged(fromGameData, toGameData) otherPlayersUnchanged(fromGameData, toGameData, nParticipants) {
-        require(fromGameData.players[fromGameData.currentPlayer].jailed == 0);
-        require(fromGameData.players[fromGameData.currentPlayer].rolls.length == toGameData.players[fromGameData.currentPlayer].rolls.length);
-        uint8[2] memory roll = toGameData.players[toGameData.currentPlayer].rolls[toGameData.players[toGameData.currentPlayer].rolls.length - 1];
-        uint8 totalMovement = roll[0] + roll[1];
-        require(fromGameData.players[fromGameData.currentPlayer].position + totalMovement == toGameData.players[fromGameData.currentPlayer].position);
-        require(fromGameData.players[fromGameData.currentPlayer].position == toGameData.players[fromGameData.currentPlayer].position);
+    ) private pure stakeUnchanged(fromGameData, toGameData) currentPlayerUnchanged(fromGameData, toGameData) otherPlayersUnchanged(fromGameData, toGameData, nParticipants) confirmRoll(fromGameData) {
+        Player memory fromPlayer = fromGameData.players[fromGameData.currentPlayer];
+        Player memory toPlayer = toGameData.players[toGameData.currentPlayer];
+        require(fromPlayer.jailed == 0);
+        require(fromPlayer.turns.length == toPlayer.turns.length);
+        uint8[2] memory fromRoll = fromGameData.turns[fromGameData.turns.length - 1].roll;
+        uint8[2] memory toRoll = toGameData.turns[fromGameData.turns.length - 1].roll;
+        require(keccak256(abi.encodePacked(fromRoll)) == keccak256(abi.encodePacked(toRoll)));
+        uint8 totalMovement = toRoll[0] + toRoll[1];
+        require(fromPlayer.position + totalMovement == toPlayer.position);
+        require(fromPlayer.position == toPlayer.position);
     }
 
     function requireValidRollingToNextPlayer(
@@ -326,16 +368,101 @@ contract Monopoly is ForceMoveApp {
         MonopolyData memory fromGameData,
         MonopolyData memory toGameData
     ) private pure stakeUnchanged(fromGameData, toGameData) currentPlayerUnchanged(fromGameData, toGameData) {
-        // switch(fromGameData.spaces[fromGameData.players[fromGameData.currentPlayer].position].action) {
-        // ActionType.PayMoney
-        // ActionType.CollectMoney
-        // ActionType.PayMoneyToAll
-        // ActionType.CollectMoneyFromAll
-        // ActionType.CollectMoneyFromBank
-        // ActionType.GoToJail
-        // ActionType.GetOutOfJailFree
-        // ActionType.MoveSpaces
-        // ActionType.MoveToSpace
+        Turn fromTurn = fromGameData.turns[fromGameData.turns.length - 1];
+        Turn toTurn = fromGameData.turns[fromGameData.turns.length - 1];
+        require(fromTurn.player == fromGameData.currentPlayer);
+        require(toTurn.player == toGameData.currentPlayer);
+        require(fromTurn.action == ActionType.WaitingAction);
+        require(toTurn.action != ActionType.WaitingAction);
+        require(fromTurn.endPosition == fromGameData.players[fromGameData.currentPlayer].position);
+        require(toTurn.endPosition == toGameData.players[toGameData.currentPlayer].position);
+        Space fromSpace = fromGameData.spaces[fromTurn.endPosition];
+        Space toSpace = toGameData.spaces[toTurn.endPosition];
+        if(fromSpace.spaceType  == SpaceType.CommunityChest || fromSpace.spaceType  == SpaceType.Chance || toSpace.spaceType == SpaceType.CommunityChest || toSpace.spaceType == SpaceType.Chance) {
+            require(fromTurn.cardRoll == rand(fromGameData.nonce, fromGameData.players[fromGameData.currentPlayer].id, fromGameData.channelId, 2, 16));
+            require(toTurn.cardRoll == rand(toGameData.nonce, toGameData.players[toGameData.currentPlayer].id, toGameData.channelId, 2, 16));
+            // Require the card roll action to match.
+        }
+        if(toTurn.action == ActionType.PurchaseSpace) {
+            require(fromSpace.propertyStatus == PropertyStatus.Unowned);
+            require(toSpace.propertyStatus == propertyStatus.Owned);
+            require(fromTurn.endPosition == toTurn.endPosition);
+            require(fromSpace.spaceType == SpaceType.Property || fromSpace.spaceType == SpaceType.Railroad || fromSpace.spaceType == SpaceType.Utility);
+            require(toSpace.spaceType == SpaceType.Property || toSpace.spaceType == SpaceType.Railroad || toSpace.spaceType == SpaceType.Utility);
+            require(fromSpace.owner==address(0));
+            require(toSpace.owner == toGameData.players[toGameData.currentPlayer].id);
+            require(keccak256(abi.encode(fromSpace.prices)) == keccak256(abi.encode(toSpace.prices)));
+            require(fromGameData.players[fromGameData.currentPlayer].balance - fromSpace.prices[0] == toGameData.players[toGameData.currentPlayer].balance);
+        }
+        if(toTurn.action == ActionType.PayRent) {
+            require(fromSpace.owner == toSpace.owner);
+            require(fromSpace.propertyStatus == toSpace.propertyStatus);
+            require(fromTurn.endPosition == toTurn.endPosition);
+            require(fromSpace.spaceType == SpaceType.Property);
+            require(toSpace.spaceType == SpaceType.Property);
+            require(fromSpace.propertyStatus != PropertyStatus.Unowned);
+            require(toSpace.propertyStatus != PropertyStatus.Unowned);
+            if((fromSpace.propertyStatus == PropertyStatus.Mortgaged && toSpace.propertyStatus == PropertyStatus.Mortgaged) || (fromSpace.owner == fromGameData.currentPlayer && toSpace.owner == toGameData.currentPlayer)) {
+                require(fromGameData.players[fromGameData.currentPlayer].balance == toGameData.players[toGameData.currentPlayer].balance);
+            } else {
+                require(fromGameData.players[fromGameData.currentPlayer].balance - fromSpace.prices[uint8(fromSpace.propertyStatus)] == toGameData.players.balance);
+            }
+        }
+        if(toTurn.action == ActionType.PayTax) {
+            require(fromTurn.endPosition == toTurn.endPosition);
+            require(fromSpace.spaceType == SpaceType.Tax);
+            require(toSpace.spaceType == SpaceType.Tax);
+            require(fromGameData.players[fromGameData.currentPlayer].balance - fromSpace.prices[0] == toGameData.players[toGameData.currentPlayer].balance);
+        }
+        if(toTurn.action == ActionType.PayMoney) {
+            require(fromTurn.endPosition == toTurn.endPosition);
+            require(fromSpace.spaceType == SpaceType.Card);
+            require(toSpace.spaceType == SpaceType.Card);
+            require(fromGameData.players[fromGameData.currentPlayer].balance - fromSpace.prices[0] == toGameData.players[toGameData.currentPlayer].balance);
+        }
+        if(toTurn.action == ActionType.CollectMoney) {
+            require(fromTurn.endPosition == toTurn.endPosition);
+            require(fromSpace.spaceType == SpaceType.Card);
+            require(toSpace.spaceType == SpaceType.Card);
+            require(fromGameData.players[fromGameData.currentPlayer].balance - fromSpace.prices[0] == toGameData.players[toGameData.currentPlayer].balance);
+        }
+        if(toTurn.action == ActionType.PayMoneyToAll) {
+            require(fromTurn.endPosition == toTurn.endPosition);
+            require(fromSpace.spaceType == SpaceType.Card);
+            require(toSpace.spaceType == SpaceType.Card);
+            require(fromGameData.players[fromGameData.currentPlayer].balance - fromSpace.prices[0] == toGameData.players[toGameData.currentPlayer].balance);
+        }
+        if(toTurn.action == ActionType.CollectMoneyFromAll) {
+            require(fromTurn.endPosition == toTurn.endPosition);
+            require(fromSpace.spaceType == SpaceType.Card);
+            require(toSpace.spaceType == SpaceType.Card);
+            require(fromGameData.players[fromGameData.currentPlayer].balance - fromSpace.prices[0] == toGameData.players[toGameData.currentPlayer].balance);
+        }
+        if(toTurn.action == ActionType.CollectMoneyFromBank) {
+            require(fromTurn.endPosition == toTurn.endPosition);
+            require(fromSpace.spaceType == SpaceType.Card);
+            require(toSpace.spaceType == SpaceType.Card);
+            require(fromGameData.players[fromGameData.currentPlayer].balance - fromSpace.prices[0] == toGameData.players[toGameData.currentPlayer].balance);
+        }
+        if(toTurn.action == ActionType.GetOutOfJailFree) {
+            require(fromTurn.endPosition == toTurn.endPosition);
+            require(fromSpace.spaceType == SpaceType.Card);
+            require(toSpace.spaceType == SpaceType.Card);
+            require(fromGameData.players[fromGameData.currentPlayer].balance - fromSpace.prices[0] == toGameData.players[toGameData.currentPlayer].balance);
+        }
+        if(toTurn.action == ActionType.GoToJail) {
+            require(fromSpace.spaceType == SpaceType.Card || fromSpace.spaceType == SpaceType.GoToJail);
+            require(toSpace.spaceType == SpaceType.Jail);
+            require(toGameData.players[toGameData.currentPlayer].jailed == 1);
+        }
+        if(toTurn.action == ActionType.MoveSpaces) {
+            require(fromSpace.spaceType == SpaceType.Chance);
+            // require position moved by certain amount
+        }
+        if(toTurn.action == ActionType.MoveToSpace) {
+            require(fromSpace.spaceType == SpaceType.Chance);
+            // require position moved to certain space
+        }
     }
 
     function requireValidActionToRolling(
@@ -344,7 +471,13 @@ contract Monopoly is ForceMoveApp {
         MonopolyData memory fromGameData,
         MonopolyData memory toGameData
     ) private pure stakeUnchanged(fromGameData, toGameData) currentPlayerUnchanged(fromGameData, toGameData) {
-        // jailed
+        // doubles
+        uint8 currentPlayer = fromGameData.currentPlayer;
+        require(fromGameData.turns.length + 1 == toGameData.turns.length);
+        require(fromGameData.players[currentPlayer].position == toGameData.players[currentPlayer].position);
+        if(playerRolledDoubles(toGameData)) {
+            require(fromGameData.players[currentPlayer].doublesRolled + 1 == toGameData.players[currentPlayer].doublesRolled);
+        }
     }
 
     function requireValidActionToMaintainence(
@@ -354,6 +487,7 @@ contract Monopoly is ForceMoveApp {
         MonopolyData memory toGameData
     ) private pure stakeUnchanged(fromGameData, toGameData) currentPlayerUnchanged(fromGameData, toGameData) {
         // maintainance actions, trades, hotels/houses/etc
+        require(keccak256(abi.encode()))
     }
 
     function requireValidMaintainenceToNextPlayer(
@@ -465,26 +599,37 @@ contract Monopoly is ForceMoveApp {
         return allocation;
     }
 
-    function rand(uint256 nonce, address sender, bytes32 channelId) public pure returns (uint256) {
-        return
-            uint256(
-                keccak256(
-                    abi.encodePacked(
-                        nonce + 1,
-                        sender,
-                        channelId
-                    )
-                )
-            );
+    function rand(uint256 nonce, address sender, bytes32 channelId, uint8 offset, uint8 max) public pure returns (uint8) {
+        return uint8(keccak256(
+            abi.encodePacked(
+                nonce + 1,
+                sender,
+                channelId
+            )
+        )[offset]) % max;
     }
 
     function playerHash(Player memory player) public pure returns (bytes32) {
         return keccak256(abi.encode(player));
     }
 
-    function playerRolledDoubles(MonopolyData memory toGameData) public pure returns (bool) {
-        uint8[2] memory roll = toGameData.players[toGameData.currentPlayer].rolls[toGameData.players[toGameData.currentPlayer].rolls.length - 1];
+    function playerRolledDoubles(MonopolyData memory gameData) public pure returns (bool) {
+        uint8[2] memory roll = gameData.turns[gameData.turns.length - 1].roll;
         return roll[0] == roll[1];
+    }
+
+    modifier confirmRoll(MonopolyData memory gameData) {
+        uint8[2] memory roll = gameData.turns[gameData.turns.length - 1].roll;
+        require(roll[0] == rand(gameData.nonce, gameData.players[gameData.currentPlayer].id, gameData.channelId, 0, 6));
+        require(roll[1] == rand(gameData.nonce, gameData.players[gameData.currentPlayer].id, gameData.channelId, 1, 6));
+        _;
+    }
+
+    modifier rollsUnchanged(MonopolyData memory fromGameData, MonopolyData memory toGameData) {
+        Turn[] memory fromTurn = fromGameData.turns;
+        Turn[] memory toTurn = toGameData.turns;
+        require(keccak256(abi.encodePacked(fromTurn)) == keccak256(abi.encodePacked(toTurn)));
+        _;
     }
 
     modifier allParticipantsPlaying(MonopolyData memory fromGameData,

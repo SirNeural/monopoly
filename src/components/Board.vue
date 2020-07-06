@@ -498,22 +498,22 @@ export default {
     // let ambientLight = new THREE.AmbientLight(0xf0f5fb, 0.3);
     // this.three.scenes.webgl.add(ambientLight);
 
-    let mw = Math.max(window.innerHeight / 2, window.innerWidth / 2)
-    let light = new THREE.SpotLight(0xefdfd5, 1);
-    light.position.set(-mw / 2, mw * 2, mw / 2);
-    light.target.position.set(0, 0, 0);
-    light.distance = mw * 5;
-    light.castShadow = true;
-    light.shadowCameraNear = mw / 10;
-    light.shadowCameraFar = mw * 5;
-    light.shadowCameraFov = 50;
-    light.shadowBias = 0.001;
-    light.shadowDarkness = 1.1;
-    light.shadowMapWidth = 1024;
-    light.shadowMapHeight = 1024;
+    // let mw = Math.max(window.innerHeight / 2, window.innerWidth / 2)
+    // let light = new THREE.SpotLight(0xefdfd5, 1);
+    // light.position.set(-mw / 2, mw * 2, mw / 2);
+    // light.target.position.set(0, 0, 0);
+    // light.distance = mw * 5;
+    // light.castShadow = true;
+    // light.shadowCameraNear = mw / 10;
+    // light.shadowCameraFar = mw * 5;
+    // light.shadowCameraFov = 50;
+    // light.shadowBias = 0.001;
+    // light.shadowDarkness = 1.1;
+    // light.shadowMapWidth = 1024;
+    // light.shadowMapHeight = 1024;
     // let spotLightHelper = new THREE.SpotLightHelper(light)
 
-    this.three.scenes.webgl.add(light);
+    // this.three.scenes.webgl.add(light);
     // this.three.scenes.webgl.add(spotLightHelper);
     this.addLight(0, 750, 0);
     // this.addLight(-1050, 1050, 1050);
@@ -525,6 +525,12 @@ export default {
       const gltfLoader = new GLTFLoader(manager);
       for (const model of Object.values(this.models)) {
         gltfLoader.load(model.url, gltf => {
+          // let piece = gltf.scene.children[0];
+          // piece.traverse(n => { if ( n.isMesh ) {
+          //   n.castShadow = true; 
+          //   n.receiveShadow = true;
+          //   if(n.material.map) n.material.map.anisotropy = 1; 
+          // }});
           model.gltf = gltf;
         });
       }
@@ -550,8 +556,8 @@ export default {
     this.three.board.center = new THREE.Mesh(geometry, material);
     this.three.board.outer.scale.multiplyScalar(0.755);
     this.three.board.center.receiveShadow = true;
-    let axesHelper = new THREE.AxesHelper(50);
-    this.three.board.center.add(axesHelper);
+    // let axesHelper = new THREE.AxesHelper(50);
+    // this.three.board.center.add(axesHelper);
 
     this.three.board.outer.add(this.three.board.center);
     // let gridHelper = new THREE.GridHelper(263,11);
