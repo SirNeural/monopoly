@@ -112,6 +112,7 @@ contract Monopoly is ForceMoveApp {
     struct Player {
         string name;
         address id;
+        bool bankrupt;
         uint256 balance;
         uint256 jailed;
         uint256 doublesRolled;
@@ -221,12 +222,12 @@ contract Monopoly is ForceMoveApp {
             revert("Bankrupt may only transition to NextPlayer or End");
         } else if (fromGameData.positionType == PositionType.End) {
             // End
-            require(
-                toGameData.positionType == PositionType.Start,
-                "End may only transition to Start"
-            );
-            requireValidEndToStart(fromGameData, toGameData);
-            return true;
+            // require(
+            //     toGameData.positionType == PositionType.Start,
+            //     "End may only transition to Start"
+            // );
+            // requireValidEndToStart(fromGameData, toGameData);
+            // return true;
         }
         revert("No valid transition found");
     }
@@ -284,12 +285,20 @@ contract Monopoly is ForceMoveApp {
                 : fromGameState.chances[randNum];
     }
 
-    function getTurn(MonopolyData memory fromGameState)
+    function getTurn(MonopolyData memory fromGameData)
         public
         pure
         returns (Turn memory)
     {
-        return fromGameState.turns[fromGameState.turns.length - 1];
+        return fromGameData.turns[fromGameData.turns.length - 1];
+    }
+
+    function getNextPlayer(MonopolyState memory fromGameState) public pure returns (uint256) {
+        uint256 nextPlayer = (fromGameState.currentPlayer + 1) % fromGameState.players.length;
+        while (fromGameState.players[nextPlayer].bankrupt) {
+            nextPlayer += 1;
+        }
+        return nextPlayer;
     }
 
     function copyStruct(MonopolyState memory fromGameState)
@@ -305,7 +314,8 @@ contract Monopoly is ForceMoveApp {
         Turn memory turn
     ) public pure returns (MonopolyState memory) {
         MonopolyState memory toGameState = copyStruct(fromGameState);
-        uint8[2] memory roll = getRoll(fromGameState);
+        toGameState.nonce += 1;
+        uint8[2] memory roll = getRoll(toGameState);
         if (roll[0] == roll[1]) {
             toGameState.players[toGameState.currentPlayer].doublesRolled += 1;
         }
@@ -381,9 +391,7 @@ contract Monopoly is ForceMoveApp {
         require(roll[0] != roll[1]);
         require(fromPlayer.jailed > 0);
         toGameState.players[toGameState.currentPlayer].jailed += 1;
-        toGameState.currentPlayer = uint256(
-            (toGameState.currentPlayer + 1) % toGameState.players.length
-        );
+        toGameState.currentPlayer = getNextPlayer(fromGameState);
         return toGameState;
     }
 
@@ -551,6 +559,8 @@ contract Monopoly is ForceMoveApp {
             toGameState.players[fromGameState.currentPlayer].balance -= 200;
         } else if (playerSpace.spaceType == SpaceType.FreeParking) {
             // to implement, house rules
+        } else if (playerSpace.spaceType == SpaceType.Go) {
+            toGameState.players[fromGameState.currentPlayer].balance += 200;
         } else if (
             playerSpace.spaceType == SpaceType.Property ||
             playerSpace.spaceType == SpaceType.Railroad ||
@@ -644,11 +654,6 @@ contract Monopoly is ForceMoveApp {
         return space.status == PropertyStatus.Owned && space.owner == player.id;
     }
 
-    function playerOwnedMonopolies(Player memory player)
-        public
-        pure
-        returns (uint256[] memory)
-    {}
 
     function applyActionToMaintainence(
         MonopolyState memory fromGameState,
@@ -735,7 +740,11 @@ contract Monopoly is ForceMoveApp {
     function applyMaintainenceToNextPlayer(
         MonopolyState memory fromGameState,
         Turn memory turn
-    ) public pure returns (MonopolyState memory) {}
+    ) public pure returns (MonopolyState memory) {
+        MonopolyState memory toGameState = copyStruct(fromGameState);
+        toGameState.currentPlayer = getNextPlayer(fromGameState);
+        return toGameState;
+    }
 
     function requireValidMaintainenceToNextPlayer(
         MonopolyData memory fromGameData,
@@ -757,7 +766,11 @@ contract Monopoly is ForceMoveApp {
     function applyMaintainenceToBankrupt(
         MonopolyState memory fromGameState,
         Turn memory turn
-    ) public pure returns (MonopolyState memory) {}
+    ) public pure returns (MonopolyState memory) {
+        MonopolyState memory toGameState = copyStruct(fromGameState);
+        toGameState.players[toGameState.currentPlayer].bankrupt = true;
+        return toGameState;
+    }
 
     function requireValidMaintainenceToBankrupt(
         MonopolyData memory fromGameData,
@@ -779,7 +792,15 @@ contract Monopoly is ForceMoveApp {
     function applyNextPlayerToRolling(
         MonopolyState memory fromGameState,
         Turn memory turn
-    ) public pure returns (MonopolyState memory) {}
+    ) public pure returns (MonopolyState memory) {
+        MonopolyState memory toGameState = copyStruct(fromGameState);
+        toGameState.nonce += 1;
+        uint8[2] memory roll = getRoll(toGameState);
+        if (roll[0] == roll[1]) {
+            toGameState.players[toGameState.currentPlayer].doublesRolled += 1;
+        }
+        return toGameState;
+    }
 
     function requireValidNextPlayerToRolling(
         MonopolyData memory fromGameData,
@@ -801,7 +822,11 @@ contract Monopoly is ForceMoveApp {
     function applyBankruptToNextPlayer(
         MonopolyState memory fromGameState,
         Turn memory turn
-    ) public pure returns (MonopolyState memory) {}
+    ) public pure returns (MonopolyState memory) {
+        MonopolyState memory toGameState = copyStruct(fromGameState);
+        toGameState.players[toGameState.currentPlayer].bankrupt = true;
+        return toGameState;
+    }
 
     function requireValidBankruptToNextPlayer(
         MonopolyData memory fromGameData,
@@ -823,7 +848,11 @@ contract Monopoly is ForceMoveApp {
     function applyBankruptToEnd(
         MonopolyState memory fromGameState,
         Turn memory turn
-    ) public pure returns (MonopolyState memory) {}
+    ) public pure returns (MonopolyState memory) {
+        MonopolyState memory toGameState = copyStruct(fromGameState);
+
+        return toGameState;
+    }
 
     function requireValidBankruptToEnd(
         MonopolyData memory fromGameData,
@@ -834,28 +863,6 @@ contract Monopoly is ForceMoveApp {
                 keccak256(
                     abi.encode(
                         applyBankruptToEnd(
-                            fromGameData.state,
-                            getTurn(fromGameData)
-                        )
-                    )
-                )
-        );
-    }
-
-    function applyEndToStart(
-        MonopolyState memory fromGameState,
-        Turn memory turn
-    ) public pure returns (MonopolyState memory) {}
-
-    function requireValidEndToStart(
-        MonopolyData memory fromGameData,
-        MonopolyData memory toGameData
-    ) private pure stakeUnchanged(fromGameData, toGameData) {
-        require(
-            keccak256(abi.encode(toGameData.state)) ==
-                keccak256(
-                    abi.encode(
-                        applyEndToStart(
                             fromGameData.state,
                             getTurn(fromGameData)
                         )
