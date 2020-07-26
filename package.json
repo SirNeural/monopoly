@@ -20,6 +20,9 @@
     "preinstall": "npx typesync",
     "postinstall": "patch-package"
   },
+  "engines": {
+    "node": "12.16.3"
+  },
   "dependencies": {
     "@fortawesome/fontawesome-svg-core": "^1.2.28",
     "@fortawesome/free-brands-svg-icons": "^5.13.0",
