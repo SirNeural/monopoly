@@ -23,7 +23,7 @@ export interface ChannelState<T = AppData> {
     appDefinition: Address;
     channelId: ChannelId;
     status: ChannelStatus;
-    turnNum: Uint256;
+    turnNum: number;
     challengeExpirationTime?: number;
 }
 

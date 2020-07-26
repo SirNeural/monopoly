@@ -42,6 +42,7 @@ contract Monopoly is ForceMoveApp {
         GoToJail,
         GetOutOfJailFree,
         MoveSpaces,
+        MoveBackSpaces,
         MoveToSpace,
         MoveToNearestUtility,
         MoveToNearestRailroad,
@@ -88,8 +89,8 @@ contract Monopoly is ForceMoveApp {
         uint256 hotels; // Do i want to implement this?
         Player[] players;
         Space[40] spaces;
-        Card[16] chances;
-        Card[17] commChests;
+        Card[16] chance;
+        Card[17] communityChest;
     }
 
     struct MonopolyData {
@@ -281,8 +282,8 @@ contract Monopoly is ForceMoveApp {
         );
         return
             commChest
-                ? fromGameState.commChests[randNum]
-                : fromGameState.chances[randNum];
+                ? fromGameState.communityChest[randNum]
+                : fromGameState.chance[randNum];
     }
 
     function getTurn(MonopolyData memory fromGameData)

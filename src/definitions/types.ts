@@ -1,5 +1,5 @@
 // @ts-ignore
-import { Uint256, Address } from '@statechannels/client-api-schema/src/types'
+import { Uint256, Bytes32, Address } from '@statechannels/client-api-schema/src/types'
 
 export enum PositionType {
     Start, // Setup game, allocate funds
@@ -44,76 +44,96 @@ export interface End extends HasStake {
 export type AppData = Start | Rolling | Moving | Action | Maintenance | NextPlayer | Bankrupt | End;
 
 
-export enum ActionType {
-    BuyProperty,
-    AuctionProperty,
-    PayRent,
-    PayUtilities,
-    PayIncomeTax,
-    PayLuxuryTax,
-    GoToJail,
-    CommunityCard,
-    ChanceCard,
-    FreeParking
-    //Pass Go?
-}
-export enum MaintainanceType {
-    MortgageProperty,
-    AddHouse,
-    RemoveHouse,
-    AddHotel,
-    RemoveHotel
-    // Trade
-}
-
 export enum SpaceType {
-    Corner,
+    Go,
     Property,
     Railroad,
     Utility,
-    Card,
-    Tax
+    CommunityChest,
+    Chance,
+    LuxuryTax,
+    IncomeTax,
+    Jail,
+    FreeParking,
+    GoToJail
 }
-export enum CardActionType {
+
+export enum ActionType {
     PayMoney,
     CollectMoney,
     PayMoneyToAll,
     CollectMoneyFromAll,
-    CollectMoneyFromBank,
     GoToJail,
     GetOutOfJailFree,
     MoveSpaces,
-    MoveToSpace
+    MoveBackSpaces,
+    MoveToSpace,
+    MoveToNearestUtility,
+    MoveToNearestRailroad,
+    PropertyAssessment,
+    GeneralRepairs
+}
+export enum PropertyStatus {
+    Unowned,
+    Owned,
+    Monopoly,
+    SingleHouse,
+    DoubleHouse,
+    TripleHouse,
+    QuadHouse,
+    Hotel,
+    Mortgaged
 }
 
 export interface Space {
+    id: Uint256;
     spaceType: SpaceType;
-    prices: number[];
+    status: PropertyStatus;
+    prices: Uint256[];
+    housePrice: Uint256;
     owner: Address;
-    action: CardActionType;
+}
+
+export interface Turn {
+    player: Uint256;
+    purchased: Uint256[];
+    mortgaged: Uint256[];
+    unmortgaged: Uint256[];
+    housesAdded: Uint256[];
+    housesRemoved: Uint256[];
+}
+
+export interface Card {
+    message: string;
+    amount: Uint256;
+    action: ActionType;
+}
+
+export interface MonopolyState {
+    channelId: Bytes32;
+    nonce: Uint256;
+    currentPlayer: Uint256;
+    houses: Uint256;
+    hotels: Uint256;
+    players: Player[];
+    spaces: Space[];
+    chance: Card[];
+    communityChest: Card[];
 }
 
 export interface MonopolyData {
     positionType: PositionType;
-    stake: string; // this is contributed by each player. If you win, you get your stake back as well as the stake of the other player. If you lose, you lose your stake.
-    nonce: string;
-    currentPlayer: number;
-    // moveNum: string;
-    // blockNum: string;
-    houses: number; // find max and limit data structure
-    hotels: number; // find max and limit data structure
-    // Num houses/hotels
-    spaces: Space[];
-    players: Player[];
+    state: MonopolyState;
+    turns: Turn[];
 }
 
 export interface Player {
     name: string;
     id: Address;
-    jailed: boolean;
-    balance: number;
-    doublesRolled: number;
-    position: number;
-    getOutOfJailFreeCards: number;
-    properties: number[];
+    bankrupt: boolean;
+    balance: Uint256;
+    jailed: Uint256;
+    doublesRolled: Uint256;
+    position: Uint256;
+    getOutOfJailFreeCards: Uint256;
 }

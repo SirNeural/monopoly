@@ -796,6 +796,11 @@
     lodash "^4.17.13"
     to-fast-properties "^2.0.0"
 
+"@counterfactual/cf-adjudicator-contracts@0.0.11":
+  version "0.0.11"
+  resolved "https://registry.yarnpkg.com/@counterfactual/cf-adjudicator-contracts/-/cf-adjudicator-contracts-0.0.11.tgz#6e956250cb33e44e99e370f7ec7be932b3c8a0b7"
+  integrity sha512-MrFMOQ9Fm54yww7VD9elkebpjp0WgoV0RjBp7gd4GUj05ogxC29+QVIX7fgsDdZ3eiT7tgNW+amp2hQQC7oqlg==
+
 "@ethereum-waffle/chai@^2.5.0":
   version "2.5.0"
   resolved "https://registry.yarnpkg.com/@ethereum-waffle/chai/-/chai-2.5.0.tgz#0e39b16ac2ce77eb35f1afce727f925849959f82"
@@ -1054,7 +1059,7 @@
     safe-buffer "^5.1.1"
     util.promisify "^1.0.0"
 
-"@openzeppelin/contracts@^3.0.1":
+"@openzeppelin/contracts@3.0.1", "@openzeppelin/contracts@^3.0.1":
   version "3.0.1"
   resolved "https://registry.yarnpkg.com/@openzeppelin/contracts/-/contracts-3.0.1.tgz#2f327f77d16b43f14674086b2b634bda38cb0838"
   integrity sha512-uSrD7hZ0ViuHGqHZbeHawZBi/uy7aBiNramXAt2dFFuSuoU4u9insS3V3zdVfOnYSPreUo636xSOuQIFN4//HA==
@@ -1129,6 +1134,41 @@
   version "0.6.1"
   resolved "https://registry.yarnpkg.com/@solidity-parser/parser/-/parser-0.6.1.tgz#113edceb51da7ab3ca14ebd4cc66fe64bcb9082e"
   integrity sha512-MUA5kP9LdeTILeOsaz/k/qA4MdTNUxrn6q6HMYsMzQN5crU9bWKND2DaoWZhzofQM0VaTOaD8GFkCw1BYbNj5w==
+
+"@statechannels/channel-client@^0.0.6":
+  version "0.0.6"
+  resolved "https://registry.yarnpkg.com/@statechannels/channel-client/-/channel-client-0.0.6.tgz#e67c9f9ded3ef149cb12f12b7c7529dec20ee058"
+  integrity sha512-JNmvH1ORg0nQPKN6C8Wvczf2MPGe4aXNpqMC0YYcRyaJVhUL0UkRTFIoUHJUk3wunKr+O41MRg5myPzZPc6ekA==
+  dependencies:
+    "@statechannels/channel-provider" "*"
+    "@statechannels/client-api-schema" "0.0.3"
+    ethers "4.0.45"
+    eventemitter3 "4.0.0"
+
+"@statechannels/channel-provider@*", "@statechannels/channel-provider@^0.0.5":
+  version "0.0.5"
+  resolved "https://registry.yarnpkg.com/@statechannels/channel-provider/-/channel-provider-0.0.5.tgz#bf61011ffe4a01e268909ad2ec460664ddd05e4d"
+  integrity sha512-lL6VXoWL99RziDz9guet9w3kAOVUHUVLXq3NXp8I34oOu+WNVfCqb1+jDPpevrEdTsO+4yh91+qPMaoAco5Dew==
+  dependencies:
+    eventemitter3 "4.0.0"
+    guid-typescript "1.0.9"
+    pino "6.2.0"
+
+"@statechannels/client-api-schema@0.0.3":
+  version "0.0.3"
+  resolved "https://registry.yarnpkg.com/@statechannels/client-api-schema/-/client-api-schema-0.0.3.tgz#e235e263bb8d981249f10ad46441dfa7d2a20caf"
+  integrity sha512-C8/sDn0a+75ieN26ACni58tZ2lzHNbCW5S/Kp32mtxmDY4d8G+lbjC9uIdc6vuNRs11KD7RuMPxP4ZBd6z2KLw==
+  dependencies:
+    ajv "6.11.0"
+
+"@statechannels/nitro-protocol@^0.1.5":
+  version "0.1.5"
+  resolved "https://registry.yarnpkg.com/@statechannels/nitro-protocol/-/nitro-protocol-0.1.5.tgz#04eecb68920ca61841a1e740aa9258aa6c609aac"
+  integrity sha512-hvV4Zo6h3WVe19JdPv+X99jIsXxw8v443AAWy8wqEIsdbTWvDKGmX45BLcjnxf1V14B/P91WFI3fJ+Ff68R+LA==
+  dependencies:
+    "@counterfactual/cf-adjudicator-contracts" "0.0.11"
+    "@openzeppelin/contracts" "3.0.1"
+    ethers "4.0.45"
 
 "@szmarczak/http-timer@^1.1.2":
   version "1.1.2"
@@ -2028,6 +2068,16 @@ ajv-keywords@^3.1.0, ajv-keywords@^3.4.1:
   resolved "https://registry.yarnpkg.com/ajv-keywords/-/ajv-keywords-3.4.1.tgz#ef916e271c64ac12171fd8384eaae6b2345854da"
   integrity sha512-RO1ibKvd27e6FEShVFfPALuHI3WjSVNeK5FIsmme/LYRNxjKuNj+Dt7bucLa6NdSv3JcVTyMlm9kGR84z1XpaQ==
 
+ajv@6.11.0:
+  version "6.11.0"
+  resolved "https://registry.yarnpkg.com/ajv/-/ajv-6.11.0.tgz#c3607cbc8ae392d8a5a536f25b21f8e5f3f87fe9"
+  integrity sha512-nCprB/0syFYy9fVYU1ox1l2KN8S9I+tziH8D4zdZuLT3N6RMlGSGt5FSTpAiHB/Whv8Qs1cWHma1aMKZyaHRKA==
+  dependencies:
+    fast-deep-equal "^3.1.1"
+    fast-json-stable-stringify "^2.0.0"
+    json-schema-traverse "^0.4.1"
+    uri-js "^4.2.2"
+
 ajv@^6.1.0, ajv@^6.10.0, ajv@^6.10.2, ajv@^6.12.0, ajv@^6.5.5:
   version "6.12.2"
   resolved "https://registry.yarnpkg.com/ajv/-/ajv-6.12.2.tgz#c629c5eced17baf314437918d2da88c99d5958cd"
@@ -2320,6 +2370,11 @@ atob@^2.1.2:
   version "2.1.2"
   resolved "https://registry.yarnpkg.com/atob/-/atob-2.1.2.tgz#6d9517eb9e030d2436666651e86bd9f6f13533c9"
   integrity sha512-Wm6ukoaOGJi/73p/cl2GvLjTI5JM1k/O14isD73YML8StrH/7/lRFgmg8nICZgD3bZZvjwCGxtMOD3wWNAu8cg==
+
+atomic-sleep@^1.0.0:
+  version "1.0.0"
+  resolved "https://registry.yarnpkg.com/atomic-sleep/-/atomic-sleep-1.0.0.tgz#eb85b77a601fc932cfe432c5acd364a9e2c9075b"
+  integrity sha512-kNOjDqAh7px0XWNI+4QbzoiR/nTkHAWNud2uvnJquD1/x5a7EQZMJT0AczqK0Qn67oY/TTQ1LbUKajZpp3I9tQ==
 
 autoprefixer@^9.4.5, autoprefixer@^9.7.5:
   version "9.7.6"
@@ -5657,6 +5712,21 @@ ethers@4.0.0-beta.3:
     uuid "2.0.1"
     xmlhttprequest "1.8.0"
 
+ethers@4.0.45:
+  version "4.0.45"
+  resolved "https://registry.yarnpkg.com/ethers/-/ethers-4.0.45.tgz#8d4cd764d7c7690836b583d4849203c225eb56e2"
+  integrity sha512-N/Wmc6Mw4pQO+Sss1HnKDCSS6KSCx0luoBMiPNq+1GbOaO3YaZOyplBEhj+NEoYsizZYODtkITg2oecPeNnidQ==
+  dependencies:
+    aes-js "3.0.0"
+    bn.js "^4.4.0"
+    elliptic "6.5.2"
+    hash.js "1.1.3"
+    js-sha3 "0.5.7"
+    scrypt-js "2.0.4"
+    setimmediate "1.0.4"
+    uuid "2.0.1"
+    xmlhttprequest "1.8.0"
+
 ethers@^4.0.32, ethers@^4.0.45:
   version "4.0.46"
   resolved "https://registry.yarnpkg.com/ethers/-/ethers-4.0.46.tgz#13cd3ed099487f43ece00194b89a8a8781f71507"
@@ -5718,7 +5788,7 @@ eventemitter3@3.1.2, eventemitter3@^3.1.2:
   resolved "https://registry.yarnpkg.com/eventemitter3/-/eventemitter3-3.1.2.tgz#2d3d48f9c346698fce83a85d7d664e98535df6e7"
   integrity sha512-tvtQIeLVHjDkJYnzf2dgVMxfuSGJeM/7UCG17TT4EumTfNtF+0nebF/4zWOIkCreAbtNqhGEboB6BWrwqNaw4Q==
 
-eventemitter3@^4.0.0:
+eventemitter3@4.0.0, eventemitter3@^4.0.0:
   version "4.0.0"
   resolved "https://registry.yarnpkg.com/eventemitter3/-/eventemitter3-4.0.0.tgz#d65176163887ee59f386d64c82610b696a4a74eb"
   integrity sha512-qerSRB0p+UDEssxTtm6EDKcE7W4OaoisfIMl4CngyEhjpYglocpNg6UEqCvemdGhosAsg4sO2dXJOdyBifPGCg==
@@ -5964,6 +6034,16 @@ fast-levenshtein@~2.0.6:
   resolved "https://registry.yarnpkg.com/fast-levenshtein/-/fast-levenshtein-2.0.6.tgz#3d8a5c66883a16a30ca8643e851f19baa7797917"
   integrity sha1-PYpcZog6FqMMqGQ+hR8Zuqd5eRc=
 
+fast-redact@^2.0.0:
+  version "2.0.0"
+  resolved "https://registry.yarnpkg.com/fast-redact/-/fast-redact-2.0.0.tgz#17bb8f5e1f56ecf4a38c8455985e5eab4c478431"
+  integrity sha512-zxpkULI9W9MNTK2sJ3BpPQrTEXFNESd2X6O1tXMFpK/XM0G5c5Rll2EVYZH2TqI3xRGK/VaJ+eEOt7pnENJpeA==
+
+fast-safe-stringify@^2.0.7:
+  version "2.0.7"
+  resolved "https://registry.yarnpkg.com/fast-safe-stringify/-/fast-safe-stringify-2.0.7.tgz#124aa885899261f68aedb42a7c080de9da608743"
+  integrity sha512-Utm6CdzT+6xsDk2m8S6uL8VHxNwI6Jub+e9NYTcAms28T84pTa25GJQV9j0CY0N1rM8hK4x6grpF2BQf+2qwVA==
+
 fastq@^1.6.0:
   version "1.7.0"
   resolved "https://registry.yarnpkg.com/fastq/-/fastq-1.7.0.tgz#fcd79a08c5bd7ec5b55cd3f5c4720db551929801"
@@ -6200,6 +6280,11 @@ flat@^4.1.0:
   integrity sha512-Px/TiLIznH7gEDlPXcUD4KnBusa6kR6ayRUVcnEAbreRIuhkqow/mun59BuRXwoYk7ZQOLW1ZM05ilIvK38hFw==
   dependencies:
     is-buffer "~2.0.3"
+
+flatstr@^1.0.12:
+  version "1.0.12"
+  resolved "https://registry.yarnpkg.com/flatstr/-/flatstr-1.0.12.tgz#c2ba6a08173edbb6c9640e3055b95e287ceb5931"
+  integrity sha512-4zPxDyhCyiN2wIAtSLI6gc82/EjqZc1onI4Mz/l0pWrAlsSfYH/2ZIcU+e3oA2wDwbzIWNKwa23F8rh6+DRWkw==
 
 flatted@^2.0.0:
   version "2.0.2"
@@ -9823,6 +9908,23 @@ pinkie@^2.0.0:
   resolved "https://registry.yarnpkg.com/pinkie/-/pinkie-2.0.4.tgz#72556b80cfa0d48a974e80e77248e80ed4f7f870"
   integrity sha1-clVrgM+g1IqXToDnckjoDtT3+HA=
 
+pino-std-serializers@^2.4.2:
+  version "2.4.2"
+  resolved "https://registry.yarnpkg.com/pino-std-serializers/-/pino-std-serializers-2.4.2.tgz#cb5e3e58c358b26f88969d7e619ae54bdfcc1ae1"
+  integrity sha512-WaL504dO8eGs+vrK+j4BuQQq6GLKeCCcHaMB2ItygzVURcL1CycwNEUHTD/lHFHs/NL5qAz2UKrjYWXKSf4aMQ==
+
+pino@6.2.0:
+  version "6.2.0"
+  resolved "https://registry.yarnpkg.com/pino/-/pino-6.2.0.tgz#eef83cd0d9beb2f79102ff15d7946254a1f7846b"
+  integrity sha512-UzrsiT5Wyscw7dxHa8Ec8G2kY45mwFk7rrZhMkCMg8s9F8VWDVj+WFcaSIKproTDyxlqerMaHw+11jlNXgeiCg==
+  dependencies:
+    fast-redact "^2.0.0"
+    fast-safe-stringify "^2.0.7"
+    flatstr "^1.0.12"
+    pino-std-serializers "^2.4.2"
+    quick-format-unescaped "^4.0.1"
+    sonic-boom "^1.0.0"
+
 pkg-dir@^1.0.0:
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/pkg-dir/-/pkg-dir-1.0.0.tgz#7a4b508a8d5bb2d629d447056ff4e9c9314cf3d4"
@@ -10565,6 +10667,11 @@ querystringify@^2.1.1:
   version "2.1.1"
   resolved "https://registry.yarnpkg.com/querystringify/-/querystringify-2.1.1.tgz#60e5a5fd64a7f8bfa4d2ab2ed6fdf4c85bad154e"
   integrity sha512-w7fLxIRCRT7U8Qu53jQnJyPkYZIaR4n5151KMfcJlO/A9397Wxb1amJvROTK6TOnp7PfoAmg/qXiNHI+08jRfA==
+
+quick-format-unescaped@^4.0.1:
+  version "4.0.1"
+  resolved "https://registry.yarnpkg.com/quick-format-unescaped/-/quick-format-unescaped-4.0.1.tgz#437a5ea1a0b61deb7605f8ab6a8fd3858dbeb701"
+  integrity sha512-RyYpQ6Q5/drsJyOhrWHYMWTedvjTIat+FTwv0K4yoUxzvekw2aRHMQJLlnvt8UantkZg2++bEzD9EdxXqkWf4A==
 
 randombytes@^2.0.0, randombytes@^2.0.1, randombytes@^2.0.5, randombytes@^2.0.6, randombytes@^2.1.0:
   version "2.1.0"
@@ -11651,6 +11758,14 @@ solidity-coverage@^0.7.5:
     sc-istanbul "^0.4.5"
     shelljs "^0.8.3"
     web3 "1.2.6"
+
+sonic-boom@^1.0.0:
+  version "1.0.2"
+  resolved "https://registry.yarnpkg.com/sonic-boom/-/sonic-boom-1.0.2.tgz#8769646fac2ecb58bd0ed60562280aa4211598df"
+  integrity sha512-sRMmXu7uFDXoniGvtLHuQk5KWovLWoi6WKASn7rw0ro41mPf0fOolkGp4NE6680CbxvNh26zWNyFQYYWXe33EA==
+  dependencies:
+    atomic-sleep "^1.0.0"
+    flatstr "^1.0.12"
 
 sort-keys-length@^1.0.0:
   version "1.0.1"

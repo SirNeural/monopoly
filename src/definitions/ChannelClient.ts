@@ -1,5 +1,5 @@
 // @ts-ignore
-import { ChannelClientInterface } from '@statechannels/channel-client';
+import { BrowserChannelClientInterface } from '@statechannels/channel-client';
 // @ts-ignore
 import { Message, Participant, Allocation, ChannelResult } from '@statechannels/client-api-schema';
 import { ChannelState, toChannelState } from './Channel';
@@ -8,7 +8,7 @@ import { AppData } from './types'
 import { CONTRACT_ADDRESS } from '../constants';
 
 export class ChannelClient {
-  constructor(private readonly channelClient: ChannelClientInterface) { }
+  constructor(private readonly channelClient: BrowserChannelClientInterface) { }
 
   async enable () {
     /* empty */
@@ -80,7 +80,6 @@ export class ChannelClient {
     // ignore return val for now and stub out response
     const channelResult = await this.channelClient.updateChannel(
       channelId,
-      participants,
       allocations,
       appData
     );
