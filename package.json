@@ -21,7 +21,7 @@
     "postinstall": "patch-package"
   },
   "engines": {
-    "node": "12.16.3"
+    "node": "12.x"
   },
   "dependencies": {
     "@fortawesome/fontawesome-svg-core": "^1.2.28",
