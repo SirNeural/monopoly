@@ -24,7 +24,7 @@
         {"message": "From sale of stock you get $50", "action": "CollectMoney", "amount": 50},
         {"message": "Get Out of Jail", "action": "GetOutOfJailFree", "amount": 1},
         {"message": "Go to Jail– Go directly to jail– Do not pass Go– Do not collect $200", "action": "GoToJail", "amount": 1},
-        {"message": "Grand Opera Night— Collect $50 from every player for opening night seats", "action": "CollectMoneyFromAll", {"amount": 50},
+        {"message": "Grand Opera Night— Collect $50 from every player for opening night seats", "action": "CollectMoneyFromAll", "amount": 50},
         {"message": "Holiday Fund matures— Receive $100", "action": "CollectMoney", "amount": 100},
         {"message": "Income tax refund– Collect $20", "action": "CollectMoney", "amount": 20},
         {"message": "It is your birthday— Collect $10", "action": "CollectMoney", "amount": 10},
@@ -34,6 +34,6 @@
         {"message": "Receive $25 consultancy fee", "action": "CollectMoney", "amount": 25},
         {"message": "You are assessed for street repairs– $40 per house– $115 per hotel", "action": "PropertyAssessment", "amount": 1},
         {"message": "You have won second prize in a beauty contest– Collect $10", "action": "CollectMoney", "amount": 10},
-        {"message": "You inherit $100", "action": "CollectMoney", "amount": 100},
+        {"message": "You inherit $100", "action": "CollectMoney", "amount": 100}
     ]
 }
