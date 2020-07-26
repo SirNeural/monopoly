@@ -147,7 +147,7 @@ contract Monopoly is ForceMoveApp {
     function validTransition(
         VariablePart memory fromPart,
         VariablePart memory toPart,
-        uint256,
+        uint48,
         uint256 nParticipants
     ) public override pure returns (bool) {
         // decode application-specific data
