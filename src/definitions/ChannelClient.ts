@@ -1,5 +1,5 @@
 // @ts-ignore
-import { BrowserChannelClientInterface } from '@statechannels/channel-client';
+import { ChannelClientInterface } from '@statechannels/channel-client';
 // @ts-ignore
 import { Message, Participant, Allocation, ChannelResult } from '@statechannels/client-api-schema';
 import { ChannelState, toChannelState } from './Channel';
@@ -8,10 +8,10 @@ import { AppData } from './types'
 import { CONTRACT_ADDRESS } from '../constants';
 
 export class ChannelClient {
-  constructor(private readonly channelClient: BrowserChannelClientInterface) { }
+  private channelClient!: ChannelClientInterface;
 
-  async enable () {
-    /* empty */
+  async enable (channelClient: ChannelClientInterface) {
+    this.channelClient = channelClient;
   }
 
   async createChannel (

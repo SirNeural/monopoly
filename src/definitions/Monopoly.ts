@@ -24,7 +24,7 @@ function toMonopolyData (appData: AppData): MonopolyData {
 }
 
 export function spaceToType (properties, space) {
-    if (properties.hasOwnProperty(space)) {
+    if (Object.prototype.hasOwnProperty.call(properties, space)) {
         return SpaceType.Property;
     } else if (space.contains('Community Chest')) {
         return SpaceType.CommunityChest;
@@ -65,8 +65,8 @@ export function loadSpaces (spaces, properties) {
             id: bigNumberify(i),
             spaceType: spaceToType(properties, space),
             propertyStatus: PropertyStatus.Unowned,
-            prices: properties.hasOwnProperty(space) ? properties[space].rent : [],
-            housePrice: properties.hasOwnProperty(space) ? properties[space].house : []
+            prices: Object.prototype.hasOwnProperty.call(properties, space) ? properties[space].rent : [],
+            housePrice: Object.prototype.hasOwnProperty.call(properties, space) ? properties[space].house : []
         };
     })
 }

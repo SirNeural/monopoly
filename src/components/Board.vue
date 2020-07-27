@@ -47,6 +47,7 @@
 
 <script>
 require('@statechannels/channel-provider');
+import { ChannelClient } from '../definitions/ChannelClient.ts';
 import { mapGetters } from "vuex";
 import niceware from "niceware";
 import * as THREE from "three";
@@ -457,7 +458,7 @@ export default {
   },
   mounted() {
     window.channelProvider.mountWalletComponent('https://xstate-wallet.statechannels.org/');
-    window.channelProvider.enable();
+    window.channelProvider.enable(new ChannelClient(window.channelProvider));
 
     this.three.renderers.css = new CSS3DRenderer();
     this.three.renderers.css.setSize(window.innerWidth, window.innerHeight);
