@@ -796,11 +796,6 @@
     lodash "^4.17.13"
     to-fast-properties "^2.0.0"
 
-"@counterfactual/cf-adjudicator-contracts@0.0.11":
-  version "0.0.11"
-  resolved "https://registry.yarnpkg.com/@counterfactual/cf-adjudicator-contracts/-/cf-adjudicator-contracts-0.0.11.tgz#6e956250cb33e44e99e370f7ec7be932b3c8a0b7"
-  integrity sha512-MrFMOQ9Fm54yww7VD9elkebpjp0WgoV0RjBp7gd4GUj05ogxC29+QVIX7fgsDdZ3eiT7tgNW+amp2hQQC7oqlg==
-
 "@ethereum-waffle/chai@^2.5.0":
   version "2.5.0"
   resolved "https://registry.yarnpkg.com/@ethereum-waffle/chai/-/chai-2.5.0.tgz#0e39b16ac2ce77eb35f1afce727f925849959f82"
@@ -1161,12 +1156,11 @@
   dependencies:
     ajv "6.11.0"
 
-"@statechannels/nitro-protocol@^0.1.5":
-  version "0.1.5"
-  resolved "https://registry.yarnpkg.com/@statechannels/nitro-protocol/-/nitro-protocol-0.1.5.tgz#04eecb68920ca61841a1e740aa9258aa6c609aac"
-  integrity sha512-hvV4Zo6h3WVe19JdPv+X99jIsXxw8v443AAWy8wqEIsdbTWvDKGmX45BLcjnxf1V14B/P91WFI3fJ+Ff68R+LA==
+"@statechannels/nitro-protocol@^0.1.6":
+  version "0.1.6"
+  resolved "https://registry.yarnpkg.com/@statechannels/nitro-protocol/-/nitro-protocol-0.1.6.tgz#41b466f15d4e658737c510c3f3b51d4405a84c0d"
+  integrity sha512-W5fefQ3Z9KHItmtEairhvR93yUFT5PpA5XJ4t+C4/ePB0dCVmVqQWXalWl3+mVU84EkdkAtj7ZCuZXyeuTzFAQ==
   dependencies:
-    "@counterfactual/cf-adjudicator-contracts" "0.0.11"
     "@openzeppelin/contracts" "3.0.1"
     ethers "4.0.45"
 
