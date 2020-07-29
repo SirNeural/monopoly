@@ -29,7 +29,7 @@
     "@fortawesome/free-solid-svg-icons": "^5.13.0",
     "@fortawesome/vue-fontawesome": "^0.1.9",
     "@statechannels/channel-client": "^0.0.6",
-    "@statechannels/channel-provider": "^0.0.5",
+    "@statechannels/iframe-channel-provider": "^0.0.1",
     "@statechannels/nitro-protocol": "^0.1.6",
     "@tailwindcss/ui": "^0.3.0",
     "core-js": "^3.6.5",

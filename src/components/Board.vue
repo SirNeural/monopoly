@@ -46,8 +46,8 @@
 </template>
 
 <script>
-require('@statechannels/channel-provider');
-import { ChannelClient } from '../definitions/ChannelClient.ts';
+require('@statechannels/iframe-channel-provider');
+import { ChannelClient } from "../definitions/ChannelClient"
 import { mapGetters } from "vuex";
 import niceware from "niceware";
 import * as THREE from "three";
@@ -349,7 +349,7 @@ export default {
       ];
 
       // position animals in a spiral.
-      const numAnimals = 11;
+      const numAnimals = 3;
       for (let i = 0; i < numAnimals; ++i) {
         const name =
           animalModelNames[
