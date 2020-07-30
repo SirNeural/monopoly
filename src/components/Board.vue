@@ -458,7 +458,7 @@ export default {
   },
   mounted() {
     window.channelProvider.mountWalletComponent('https://xstate-wallet.statechannels.org/');
-    window.channelProvider.enable(new ChannelClient(window.channelProvider));
+    window.channelProvider.enable();
 
     this.three.renderers.css = new CSS3DRenderer();
     this.three.renderers.css.setSize(window.innerWidth, window.innerHeight);
