@@ -47,7 +47,7 @@
 
 <script>
 require('@statechannels/iframe-channel-provider');
-import { ChannelClient } from "../definitions/ChannelClient"
+// import { ChannelClient } from "../definitions/ChannelClient"
 import { mapGetters } from "vuex";
 import niceware from "niceware";
 import * as THREE from "three";
