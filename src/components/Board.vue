@@ -46,10 +46,10 @@
 </template>
 
 <script>
-require('@statechannels/iframe-channel-provider');
-// import { ChannelClient } from "../definitions/ChannelClient"
+// require('@statechannels/iframe-channel-provider');
+// import { ChannelClient } from "../definitions/ChannelClient";
+import { Connection } from "../definitions/Connection";
 import { mapGetters } from "vuex";
-import niceware from "niceware";
 import * as THREE from "three";
 import * as CANNON from "cannon";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
@@ -189,34 +189,18 @@ export default {
       });
       if (username) {
         this.username = username;
-        const user = await this.$db.collection("players").add({
-          username: this.username,
-          created_at: this.$timestamp()
-        });
-        this.$store.dispatch("setPlayer", {
-          username: this.username,
-          userID: user.id
-        });
-        // console.log(user.id);
-        this.$store.dispatch("setPeer", user.id);
-        this.openPeer();
+        this.connection = new Connection(this.username);
         return true;
       }
       return false;
     },
     async createRoom() {
       if (await this.setPlayer()) {
-        const code = niceware.generatePassphrase(8).join(" ");
-        const room = await this.$db.collection("rooms").add({
-          code: code,
-          active: true,
-          created_at: this.$timestamp()
-        });
-        await this.roomJoined(room.id);
+        const code = this.connection.id;
         await this.$swal({
           title: "Room Created!",
           content: this.$strToHtml(
-            `<div class="flex flex-col text-center"><div class="text-2xl">Use this code to invite others:</div><div class="text-lg font-bold uppercase tracking-wide mt-2 p-4 bg-gray-200 rounded">${code}</div></div>`
+            `<div class="flex flex-col text-center"><div class="text-2xl">Use this code to invite others:</div><div id="roomCode" class="text-lg font-bold uppercase tracking-wide mt-2 p-4 bg-gray-200 rounded" onclick="window.getSelection().selectAllChildren(document.getElementById('roomCode'));">${code}</div></div>`
           ),
           icon: "success",
           className: "normal-case"
@@ -236,57 +220,17 @@ export default {
           }
         });
         if (code) {
-          const query = await this.$db
-            .collection("rooms")
-            .where("code", "==", code.trim().toLowerCase())
-            .where("active", "==", true)
-            .orderBy("created_at", "desc")
-            .limit(1)
-            .get();
-          if (!query.empty) {
-            const room = query.docs[0].id;
-            await this.roomJoined(room);
-            await this.$swal({
-              title: "Room Joined!",
-              content: this.$strToHtml(
-                `<div class="flex flex-col text-center"><div class="text-2xl">Use this code to invite others:</div><div class="text-lg font-bold uppercase tracking-wide mt-2 p-4 bg-gray-200 rounded">${code}</div></div>`
-              ),
-              icon: "success",
-              className: "normal-case"
-            });
-          }
+          this.connection.joinRoom(code);
+          await this.$swal({
+            title: "Room Joined!",
+            content: this.$strToHtml(
+              `<div class="flex flex-col text-center"><div class="text-2xl">Use this code to invite others:</div><div id="roomCode" class="text-lg font-bold uppercase tracking-wide mt-2 p-4 bg-gray-200 rounded" onclick="window.getSelection().selectAllChildren(document.getElementById('roomCode'));">${code}</div></div>`
+            ),
+            icon: "success",
+            className: "normal-case"
+          });
         }
       }
-    },
-    async roomJoined(room) {
-      this.$store.dispatch("setSeed", room);
-      this.$store.dispatch("seedRandom");
-      await this.$db
-        .collection("players")
-        .doc(this.player.id)
-        .update({
-          room_id: room
-        });
-      const query = await this.$db
-        .collection("players")
-        .where("room_id", "==", room);
-      const players = await query.get();
-      players.docs.forEach(player => {
-        if (player.data().username !== this.username) {
-          this.$store.dispatch("addExistingPlayer", {
-            username: player.data().username,
-            userID: player.id
-          });
-        }
-      });
-      await query.onSnapshot(snapshot => {
-        snapshot.forEach(doc => {
-          this.$store.dispatch("addNewPlayer", {
-            username: doc.data().username,
-            id: doc.id
-          });
-        });
-      });
     },
     addLight(...pos) {
       const color = 0xffffff;
@@ -457,8 +401,8 @@ export default {
     window.removeEventListener("resize", this.onWindowResize);
   },
   mounted() {
-    window.channelProvider.mountWalletComponent('https://xstate-wallet.statechannels.org/');
-    window.channelProvider.enable();
+    // window.channelProvider.mountWalletComponent('https://xstate-wallet.statechannels.org/');
+    // window.channelProvider.enable();
 
     this.three.renderers.css = new CSS3DRenderer();
     this.three.renderers.css.setSize(window.innerWidth, window.innerHeight);
