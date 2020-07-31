@@ -1,57 +1,87 @@
 import Peer from 'peerjs';
+import { ChannelClient } from './ChannelClient';
 const niceware = require("niceware")
 
 export class Connection {
     private self;
     private peers;
     private name;
+    private channelClient = new ChannelClient();
     public id;
 
-    constructor(name: string) {
+    constructor(name: string, channelProvider) {
         this.name = name;
         this.peers = [];
         this.id = niceware.generatePassphrase(8).join('-');
         this.self = new Peer(this.id, {
-            host: '9000-a458f755-0419-47ad-928c-3d5c8ed5d902.ws-us02.gitpod.io', secure: true, /*config: {
+            config: {
                 'iceServers': [{
-                    'urls': [
-                        'stun:stun.l.google.com:19302',
-                        'stun:stun1.l.google.com:19302',
-                        'stun:stun2.l.google.com:19302',
-                        'stun:stun.l.google.com:19302?transport=udp',
-                    ]
+                    urls: "stun:numb.viagenie.ca",
+                    username: "bradebreeze@jourrapide.com",
+                    credential: "Ohm2quiefad"
+                },
+                {
+                    urls: "turn:numb.viagenie.ca",
+                    username: "bradebreeze@jourrapide.com",
+                    credential: "Ohm2quiefad"
                 }]
-            }*/
+            }
         });
         this.self.on('connection', (conn) => {
             console.log('connection opened');
-            conn.on('data', (data) => {
-                this.parseData(data);
+            conn.on('data', async (data) => {
+                console.log("parsing received data")
+                await this.parseData(data);
             });
-            if (!this.peers.some(peer => peer.peer === conn.peer)) {
-                conn.on('open', () => {
+            conn.on('open', () => {
+                if (!this.peers.some(peer => peer.peer === conn.peer)) {
                     console.log('Received new connection from ' + conn.peer)
-                    conn.send(JSON.stringify({ type: 'sync', data: JSON.stringify(this.peers) }));
-                });
-                this.peers.push(conn);
-            }
+                    console.log('Sending existing peers ' + JSON.stringify(this.peers.map(peer => peer.peer)));
+                    conn.send({ type: 'sync', data: this.peers.map(peer => peer.peer) });
+                    this.peers.push(conn);
+                }
+            });
         });
+        this.setChannelProvider(channelProvider);
+    }
+
+    public setChannelProvider (channelProvider) {
+        this.channelClient.enable(channelProvider);
+        this.channelClient.onMessageQueued((message) => {
+            this.sendData({ type: "message", data: message });
+        })
     }
 
     public joinRoom (roomId: string) {
-        this.self.connect(roomId, { metadata: { name: this.name } });
+        if (!this.peers.some(peer => peer.peer === roomId)) {
+            const conn = this.self.connect(roomId, { metadata: { name: this.name } });
+            conn.on('open', () => {
+                console.log("established connection to host");
+            });
+            conn.on('data', async (data) => {
+                await this.parseData(data);
+            });
+            this.peers.push(conn);
+        }
     }
 
-    parseData (data) {
-        console.log("received data " + data.type);
+    async parseData (data) {
+        console.log("received data " + JSON.stringify(data));
         switch (data.type) {
             case 'sync':
-                JSON.parse(data.parseData).forEach(peer => {
-                    this.joinRoom(peer.id);
+                data.data.forEach(peer => {
+                    this.joinRoom(peer);
                 });
                 break;
-            case 'move':
+            case 'message':
+                await this.channelClient.pushMessage(data.data);
                 break;
         }
+    }
+
+    sendData (data) {
+        this.peers.forEach(peer => {
+            peer.send(data);
+        });
     }
 }

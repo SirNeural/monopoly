@@ -46,8 +46,7 @@
 </template>
 
 <script>
-// require('@statechannels/iframe-channel-provider');
-// import { ChannelClient } from "../definitions/ChannelClient";
+require('@statechannels/iframe-channel-provider');
 import { Connection } from "../definitions/Connection";
 import { mapGetters } from "vuex";
 import * as THREE from "three";
@@ -189,7 +188,7 @@ export default {
       });
       if (username) {
         this.username = username;
-        this.connection = new Connection(this.username);
+        this.connection = new Connection(this.username, window.channelProvider);
         return true;
       }
       return false;
@@ -401,8 +400,8 @@ export default {
     window.removeEventListener("resize", this.onWindowResize);
   },
   mounted() {
-    // window.channelProvider.mountWalletComponent('https://xstate-wallet.statechannels.org/');
-    // window.channelProvider.enable();
+    window.channelProvider.mountWalletComponent('https://xstate-wallet.statechannels.org/');
+    window.channelProvider.enable();
 
     this.three.renderers.css = new CSS3DRenderer();
     this.three.renderers.css.setSize(window.innerWidth, window.innerHeight);
