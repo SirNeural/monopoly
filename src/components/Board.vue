@@ -399,9 +399,9 @@ export default {
   beforeDestroy: function() {
     window.removeEventListener("resize", this.onWindowResize);
   },
-  mounted() {
-    window.channelProvider.mountWalletComponent('https://xstate-wallet.statechannels.org/');
-    window.channelProvider.enable();
+  aysnc mounted() {
+    await window.channelProvider.mountWalletComponent('https://xstate-wallet.statechannels.org/');
+    await window.channelProvider.enable();
 
     this.three.renderers.css = new CSS3DRenderer();
     this.three.renderers.css.setSize(window.innerWidth, window.innerHeight);
