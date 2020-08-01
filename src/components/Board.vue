@@ -400,8 +400,9 @@ export default {
     window.removeEventListener("resize", this.onWindowResize);
   },
   mounted() {
-    window.channelProvider.mountWalletComponent('https://xstate-wallet.statechannels.org/');
-    window.channelProvider.enable();
+    window.channelProvider.mountWalletComponent('https://xstate-wallet.statechannels.org/').then(() => {
+      window.channelProvider.enable();
+    });
 
     this.three.renderers.css = new CSS3DRenderer();
     this.three.renderers.css.setSize(window.innerWidth, window.innerHeight);
