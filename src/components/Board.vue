@@ -175,7 +175,7 @@ export default {
     rollDice() {
       this.$store.dispatch("rollDice", this.username);
     },
-    async setPlayer() {
+    async setPlayer(host = false) {
       const username = await this.$swal({
         title: "What username do you want?",
         content: {
@@ -188,13 +188,13 @@ export default {
       });
       if (username) {
         this.username = username;
-        this.connection = new Connection(this.username, window.channelProvider);
+        this.connection = new Connection(this.username, window.channelProvider, host);
         return true;
       }
       return false;
     },
     async createRoom() {
-      if (await this.setPlayer()) {
+      if (await this.setPlayer(true)) {
         const code = this.connection.id;
         await this.$swal({
           title: "Room Created!",

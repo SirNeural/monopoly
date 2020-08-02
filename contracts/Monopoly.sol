@@ -101,7 +101,7 @@ contract Monopoly is ForceMoveApp {
         // Num houses/hotels
 
         PositionType positionType;
-        MonopolyState state;
+        bytes appStateBytes;
         Turn[] turns;
     }
 
@@ -137,6 +137,14 @@ contract Monopoly is ForceMoveApp {
         return abi.decode(appDataBytes, (MonopolyData));
     }
 
+    function appState(MonopolyData memory gameData)
+        internal
+        pure
+        returns (MonopolyState memory)
+    {
+        return abi.decode(gameData.appStateBytes, (MonopolyState));
+    }
+
     /**
      * @notice Encodes the Monopoly update rules.
      * @dev Encodes the Monopoly update rules.
@@ -161,15 +169,45 @@ contract Monopoly is ForceMoveApp {
                 toGameData.positionType == PositionType.Rolling,
                 "Start may only transition to Rolling"
             );
-            requireValidStartToRolling(fromGameData, toGameData);
+            require(
+                keccak256(toGameData.appStateBytes) ==
+                    keccak256(
+                        abi.encode(
+                            applyStartToRolling(
+                                appState(fromGameData),
+                                getTurn(fromGameData)
+                            )
+                        )
+                    )
+            );
             return true;
         } else if (fromGameData.positionType == PositionType.Rolling) {
             // Rolling,
             if (toGameData.positionType == PositionType.Moving) {
-                requireValidRollingToMoving(fromGameData, toGameData);
+                require(
+                    keccak256(toGameData.appStateBytes) ==
+                        keccak256(
+                            abi.encode(
+                                applyRollingToMoving(
+                                    appState(fromGameData),
+                                    getTurn(fromGameData)
+                                )
+                            )
+                        )
+                );
                 return true;
             } else if (toGameData.positionType == PositionType.NextPlayer) {
-                requireValidRollingToNextPlayer(fromGameData, toGameData); // Jailed
+                require(// Jailed
+                    keccak256(toGameData.appStateBytes) ==
+                        keccak256(
+                            abi.encode(
+                                applyRollingToNextPlayer(
+                                    appState(fromGameData),
+                                    getTurn(fromGameData)
+                                )
+                            )
+                        )
+                );
                 return true;
             }
             revert("Rolling may only transition to Moving or NextPlayer");
@@ -179,25 +217,75 @@ contract Monopoly is ForceMoveApp {
                 toGameData.positionType == PositionType.Action,
                 "Moving may only transition to Action"
             );
-            requireValidMovingToAction(fromGameData, toGameData);
+            require(
+                keccak256(toGameData.appStateBytes) ==
+                    keccak256(
+                        abi.encode(
+                            applyMovingToAction(
+                                appState(fromGameData),
+                                getTurn(fromGameData)
+                            )
+                        )
+                    )
+            );
             return true;
         } else if (fromGameData.positionType == PositionType.Action) {
             // Action,
             if (toGameData.positionType == PositionType.Rolling) {
-                requireValidActionToRolling(fromGameData, toGameData);
+                require(
+                    keccak256(toGameData.appStateBytes) ==
+                        keccak256(
+                            abi.encode(
+                                applyActionToRolling(
+                                    appState(fromGameData),
+                                    getTurn(fromGameData)
+                                )
+                            )
+                        )
+                );
                 return true;
             } else if (toGameData.positionType == PositionType.Maintenance) {
-                requireValidActionToMaintainence(fromGameData, toGameData);
+                require(
+                    keccak256(toGameData.appStateBytes) ==
+                        keccak256(
+                            abi.encode(
+                                applyActionToMaintainence(
+                                    appState(fromGameData),
+                                    getTurn(fromGameData)
+                                )
+                            )
+                        )
+                );
                 return true;
             }
             revert("Action may only transition to Rolling or Maintenance");
         } else if (fromGameData.positionType == PositionType.Maintenance) {
             // Maintenance,
             if (toGameData.positionType == PositionType.NextPlayer) {
-                requireValidMaintainenceToNextPlayer(fromGameData, toGameData);
+                require(
+                    keccak256(toGameData.appStateBytes) ==
+                        keccak256(
+                            abi.encode(
+                                applyMaintainenceToNextPlayer(
+                                    appState(fromGameData),
+                                    getTurn(fromGameData)
+                                )
+                            )
+                        )
+                );
                 return true;
             } else if (toGameData.positionType == PositionType.Bankrupt) {
-                requireValidMaintainenceToBankrupt(fromGameData, toGameData);
+                require(
+                    keccak256(toGameData.appStateBytes) ==
+                        keccak256(
+                            abi.encode(
+                                applyMaintainenceToBankrupt(
+                                    appState(fromGameData),
+                                    getTurn(fromGameData)
+                                )
+                            )
+                        )
+                );
                 return true;
             }
             revert(
@@ -209,15 +297,45 @@ contract Monopoly is ForceMoveApp {
                 toGameData.positionType == PositionType.Rolling,
                 "NextPlayer may only transition to Rolling"
             );
-            requireValidNextPlayerToRolling(fromGameData, toGameData);
+            require(
+                    keccak256(toGameData.appStateBytes) ==
+                        keccak256(
+                            abi.encode(
+                                applyNextPlayerToRolling(
+                                    appState(fromGameData),
+                                    getTurn(fromGameData)
+                                )
+                            )
+                        )
+                );
             return true;
         } else if (fromGameData.positionType == PositionType.Bankrupt) {
             // Bankrupt,
             if (toGameData.positionType == PositionType.NextPlayer) {
-                requireValidBankruptToNextPlayer(fromGameData, toGameData);
+                require(
+                    keccak256(toGameData.appStateBytes) ==
+                        keccak256(
+                            abi.encode(
+                                applyBankruptToNextPlayer(
+                                    appState(fromGameData),
+                                    getTurn(fromGameData)
+                                )
+                            )
+                        )
+                );
                 return true;
             } else if (toGameData.positionType == PositionType.End) {
-                requireValidBankruptToEnd(fromGameData, toGameData);
+                require(
+                    keccak256(toGameData.appStateBytes) ==
+                        keccak256(
+                            abi.encode(
+                                applyBankruptToEnd(
+                                    appState(fromGameData),
+                                    getTurn(fromGameData)
+                                )
+                            )
+                        )
+                );
                 return true;
             }
             revert("Bankrupt may only transition to NextPlayer or End");
@@ -323,23 +441,6 @@ contract Monopoly is ForceMoveApp {
         return toGameState;
     }
 
-    function requireValidStartToRolling(
-        MonopolyData memory fromGameData,
-        MonopolyData memory toGameData
-    ) private pure stakeUnchanged(fromGameData, toGameData) {
-        require(
-            keccak256(abi.encode(toGameData.state)) ==
-                keccak256(
-                    abi.encode(
-                        applyStartToRolling(
-                            fromGameData.state,
-                            getTurn(fromGameData)
-                        )
-                    )
-                )
-        );
-    }
-
     function applyRollingToMoving(
         MonopolyState memory fromGameState,
         Turn memory turn
@@ -365,23 +466,6 @@ contract Monopoly is ForceMoveApp {
         return toGameState;
     }
 
-    function requireValidRollingToMoving(
-        MonopolyData memory fromGameData,
-        MonopolyData memory toGameData
-    ) private pure stakeUnchanged(fromGameData, toGameData) {
-        require(
-            keccak256(abi.encode(toGameData.state)) ==
-                keccak256(
-                    abi.encode(
-                        applyRollingToMoving(
-                            fromGameData.state,
-                            getTurn(fromGameData)
-                        )
-                    )
-                )
-        );
-    }
-
     function applyRollingToNextPlayer(
         MonopolyState memory fromGameState,
         Turn memory turn
@@ -394,23 +478,6 @@ contract Monopoly is ForceMoveApp {
         toGameState.players[toGameState.currentPlayer].jailed += 1;
         toGameState.currentPlayer = getNextPlayer(fromGameState);
         return toGameState;
-    }
-
-    function requireValidRollingToNextPlayer(
-        MonopolyData memory fromGameData,
-        MonopolyData memory toGameData
-    ) private pure stakeUnchanged(fromGameData, toGameData) {
-        require(
-            keccak256(abi.encode(toGameData.state)) ==
-                keccak256(
-                    abi.encode(
-                        applyRollingToNextPlayer(
-                            fromGameData.state,
-                            getTurn(fromGameData)
-                        )
-                    )
-                )
-        );
     }
 
     function applyCardAction(
@@ -593,23 +660,6 @@ contract Monopoly is ForceMoveApp {
         return toGameState;
     }
 
-    function requireValidMovingToAction(
-        MonopolyData memory fromGameData,
-        MonopolyData memory toGameData
-    ) private pure stakeUnchanged(fromGameData, toGameData) {
-        require(
-            keccak256(abi.encode(toGameData.state)) ==
-                keccak256(
-                    abi.encode(
-                        applyMovingToAction(
-                            fromGameData.state,
-                            getTurn(fromGameData)
-                        )
-                    )
-                )
-        );
-    }
-
     function applyActionToRolling(
         MonopolyState memory fromGameState,
         Turn memory turn
@@ -628,23 +678,6 @@ contract Monopoly is ForceMoveApp {
         }
 
         return toGameState;
-    }
-
-    function requireValidActionToRolling(
-        MonopolyData memory fromGameData,
-        MonopolyData memory toGameData
-    ) private pure stakeUnchanged(fromGameData, toGameData) {
-        require(
-            keccak256(abi.encode(toGameData.state)) ==
-                keccak256(
-                    abi.encode(
-                        applyActionToRolling(
-                            fromGameData.state,
-                            getTurn(fromGameData)
-                        )
-                    )
-                )
-        );
     }
 
     function playerOwnsSpace(Space memory space, Player memory player)
@@ -720,24 +753,6 @@ contract Monopoly is ForceMoveApp {
         }
     }
 
-    function requireValidActionToMaintainence(
-        MonopolyData memory fromGameData,
-        MonopolyData memory toGameData
-    ) private pure stakeUnchanged(fromGameData, toGameData) {
-        // maintainance actions, trades, hotels/houses/etc
-        require(
-            keccak256(abi.encode(toGameData.state)) ==
-                keccak256(
-                    abi.encode(
-                        applyActionToMaintainence(
-                            fromGameData.state,
-                            getTurn(fromGameData)
-                        )
-                    )
-                )
-        );
-    }
-
     function applyMaintainenceToNextPlayer(
         MonopolyState memory fromGameState,
         Turn memory turn
@@ -747,23 +762,6 @@ contract Monopoly is ForceMoveApp {
         return toGameState;
     }
 
-    function requireValidMaintainenceToNextPlayer(
-        MonopolyData memory fromGameData,
-        MonopolyData memory toGameData
-    ) private pure stakeUnchanged(fromGameData, toGameData) {
-        require(
-            keccak256(abi.encode(toGameData.state)) ==
-                keccak256(
-                    abi.encode(
-                        applyMaintainenceToNextPlayer(
-                            fromGameData.state,
-                            getTurn(fromGameData)
-                        )
-                    )
-                )
-        );
-    }
-
     function applyMaintainenceToBankrupt(
         MonopolyState memory fromGameState,
         Turn memory turn
@@ -771,23 +769,6 @@ contract Monopoly is ForceMoveApp {
         MonopolyState memory toGameState = copyStruct(fromGameState);
         toGameState.players[toGameState.currentPlayer].bankrupt = true;
         return toGameState;
-    }
-
-    function requireValidMaintainenceToBankrupt(
-        MonopolyData memory fromGameData,
-        MonopolyData memory toGameData
-    ) private pure stakeUnchanged(fromGameData, toGameData) {
-        require(
-            keccak256(abi.encode(toGameData.state)) ==
-                keccak256(
-                    abi.encode(
-                        applyMaintainenceToBankrupt(
-                            fromGameData.state,
-                            getTurn(fromGameData)
-                        )
-                    )
-                )
-        );
     }
 
     function applyNextPlayerToRolling(
@@ -803,23 +784,6 @@ contract Monopoly is ForceMoveApp {
         return toGameState;
     }
 
-    function requireValidNextPlayerToRolling(
-        MonopolyData memory fromGameData,
-        MonopolyData memory toGameData
-    ) private pure stakeUnchanged(fromGameData, toGameData) {
-        require(
-            keccak256(abi.encode(toGameData.state)) ==
-                keccak256(
-                    abi.encode(
-                        applyNextPlayerToRolling(
-                            fromGameData.state,
-                            getTurn(fromGameData)
-                        )
-                    )
-                )
-        );
-    }
-
     function applyBankruptToNextPlayer(
         MonopolyState memory fromGameState,
         Turn memory turn
@@ -829,23 +793,6 @@ contract Monopoly is ForceMoveApp {
         return toGameState;
     }
 
-    function requireValidBankruptToNextPlayer(
-        MonopolyData memory fromGameData,
-        MonopolyData memory toGameData
-    ) private pure stakeUnchanged(fromGameData, toGameData) {
-        require(
-            keccak256(abi.encode(toGameData.state)) ==
-                keccak256(
-                    abi.encode(
-                        applyBankruptToNextPlayer(
-                            fromGameData.state,
-                            getTurn(fromGameData)
-                        )
-                    )
-                )
-        );
-    }
-
     function applyBankruptToEnd(
         MonopolyState memory fromGameState,
         Turn memory turn
@@ -853,23 +800,6 @@ contract Monopoly is ForceMoveApp {
         MonopolyState memory toGameState = copyStruct(fromGameState);
 
         return toGameState;
-    }
-
-    function requireValidBankruptToEnd(
-        MonopolyData memory fromGameData,
-        MonopolyData memory toGameData
-    ) private pure stakeUnchanged(fromGameData, toGameData) {
-        require(
-            keccak256(abi.encode(toGameData.state)) ==
-                keccak256(
-                    abi.encode(
-                        applyBankruptToEnd(
-                            fromGameData.state,
-                            getTurn(fromGameData)
-                        )
-                    )
-                )
-        );
     }
 
     function rand(
