@@ -81,6 +81,18 @@ contract Monopoly is ForceMoveApp {
         uint256[] housesRemoved;
     }
 
+    struct MonopolyStateEncoded {
+        bytes32 channelId;
+        uint256 nonce;
+        uint256 currentPlayer;
+        uint256 houses; // Do i want to implement this?
+        uint256 hotels; // Do i want to implement this?
+        bytes playersBytes;
+        bytes spacesBytes;
+        bytes chanceBytes;
+        bytes communityChestBytes;
+    }
+
     struct MonopolyState {
         bytes32 channelId;
         uint256 nonce;
@@ -94,20 +106,20 @@ contract Monopoly is ForceMoveApp {
     }
 
     struct MonopolyData {
-        uint256 stake;
         // uint256 blockNum;
         // uint256 moveNum;
 
         // Num houses/hotels
 
         PositionType positionType;
-        bytes appStateBytes;
-        Turn[] turns;
+        bytes appStateBytes; // MonopolyState
+        bytes appTurnBytes; // Turn[]
     }
 
     struct Card {
         uint256 amount;
         ActionType action;
+        string message;
     }
 
     struct Player {
@@ -142,7 +154,20 @@ contract Monopoly is ForceMoveApp {
         pure
         returns (MonopolyState memory)
     {
-        return abi.decode(gameData.appStateBytes, (MonopolyState));
+        MonopolyStateEncoded memory temp = abi.decode(gameData.appStateBytes, (MonopolyStateEncoded));
+        Player[] memory players = abi.decode(temp.playersBytes, (Player[]));
+        Space[40] memory spaces = abi.decode(temp.spacesBytes, (Space[40]));
+        Card[16] memory chance = abi.decode(temp.chanceBytes, (Card[16]));
+        Card[17] memory communityChest = abi.decode(temp.communityChestBytes, (Card[17]));
+        return MonopolyState(temp.channelId, temp.nonce, temp.currentPlayer, temp.houses, temp.hotels, players, spaces, chance, communityChest);
+    }
+
+    function appTurns(bytes memory appTurnBytes)
+        internal
+        pure
+        returns (Turn[] memory)
+    {
+        return abi.decode(appTurnBytes, (Turn[]));
     }
 
     /**
@@ -409,7 +434,8 @@ contract Monopoly is ForceMoveApp {
         pure
         returns (Turn memory)
     {
-        return fromGameData.turns[fromGameData.turns.length - 1];
+        Turn[] memory temp = appTurns(fromGameData.appTurnBytes);
+        return temp[temp.length - 1];
     }
 
     function getNextPlayer(MonopolyState memory fromGameState) public pure returns (uint256) {

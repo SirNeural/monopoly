@@ -22,17 +22,14 @@
       <div class="flex flex-col items-start">
         <button class="p-2 select-none text-xl text-white" @click="joinRoom">Join Room</button>
         <button class="p-2 select-none text-xl text-white" @click="createRoom">Create Room</button>
+        <button v-if="host" class="p-2 select-none text-xl text-white" @click="startGame">Start Game</button>
         <button class="p-2 select-none text-xl text-white" @click="randomDiceThrow">Roll Dice</button>
         <button class="p-2 select-none text-xl text-white" @click="rotate">Rotate</button>
       </div>
       <div class="flex flex-col items-end">
-        <div
-          class="flex flex-row normal-case select-none py-2"
-          v-for="p in sortedPlayers"
-          :key="p.username"
-        >
-          <span class="text-white text-lg">{{ p.username }}:</span>
-          <span class="ml-1 text-white text-xl">${{ p.balance }}</span>
+        <div class="flex flex-row normal-case select-none py-2" v-for="p in getPeers" :key="p.name">
+          <span class="text-white text-lg">{{ p.name }}:</span>
+          <span class="ml-1 text-white text-xl">$1500</span>
         </div>
       </div>
       <div class="text-lg text-white normal-case">
@@ -74,6 +71,8 @@ export default {
       angle: 0,
       username: "",
       room: "",
+      host: false,
+      connection: {},
       tmp: new THREE.Vector3(),
       world: {},
       dice: [],
@@ -143,7 +142,10 @@ export default {
       peer: "getPeer",
       sortedPlayers: "getSortedPlayers"
       // lastRoll: "getLastRoll"
-    })
+    }),
+    getPeers() {
+      return (Object.prototype.hasOwnProperty.call(this.connection, 'players') && this.connection.playerCount) ? Array.from(this.connection.players.values()) : [];
+    }
   },
   watch: {
     lastRoll(value) {
@@ -175,7 +177,10 @@ export default {
     rollDice() {
       this.$store.dispatch("rollDice", this.username);
     },
-    async setPlayer(host = false) {
+    async setPlayer() {
+      if(this.username) {
+        return true;
+      }
       const username = await this.$swal({
         title: "What username do you want?",
         content: {
@@ -188,13 +193,14 @@ export default {
       });
       if (username) {
         this.username = username;
-        this.connection = new Connection(this.username, window.channelProvider, host);
+        this.connection = new Connection(this.username, window.channelProvider, this.host);
         return true;
       }
       return false;
     },
     async createRoom() {
-      if (await this.setPlayer(true)) {
+      this.host = true;
+      if (await this.setPlayer()) {
         const code = this.connection.id;
         await this.$swal({
           title: "Room Created!",
@@ -207,6 +213,7 @@ export default {
       }
     },
     async joinRoom() {
+      this.host = false;
       if (await this.setPlayer()) {
         const code = await this.$swal({
           title: "What room do you want to join?",
@@ -219,7 +226,7 @@ export default {
           }
         });
         if (code) {
-          this.connection.joinRoom(code);
+          this.connection.joinRoom(code.toLowerCase());
           await this.$swal({
             title: "Room Joined!",
             content: this.$strToHtml(
@@ -230,6 +237,9 @@ export default {
           });
         }
       }
+    },
+    async startGame() {
+      await this.connection.createChannel();
     },
     addLight(...pos) {
       const color = 0xffffff;

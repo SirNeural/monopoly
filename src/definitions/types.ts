@@ -12,32 +12,28 @@ export enum PositionType {
     End
 }
 
-export interface HasStake {
-    stake: Uint256;
-}
-
-export interface Start extends HasStake {
+export interface Start extends MonopolyData {
     type: PositionType.Start;
 }
-export interface Rolling extends HasStake {
+export interface Rolling extends MonopolyData {
     type: PositionType.Rolling;
 }
-export interface Moving extends HasStake {
+export interface Moving extends MonopolyData {
     type: PositionType.Moving;
 }
-export interface Action extends HasStake {
+export interface Action extends MonopolyData {
     type: PositionType.Action;
 }
-export interface Maintenance extends HasStake {
+export interface Maintenance extends MonopolyData {
     type: PositionType.Maintenance;
 }
-export interface NextPlayer extends HasStake {
+export interface NextPlayer extends MonopolyData {
     type: PositionType.NextPlayer;
 }
-export interface Bankrupt extends HasStake {
+export interface Bankrupt extends MonopolyData {
     type: PositionType.Bankrupt;
 }
-export interface End extends HasStake {
+export interface End extends MonopolyData {
     type: PositionType.End;
 }
 

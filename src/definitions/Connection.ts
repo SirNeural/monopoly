@@ -4,23 +4,26 @@ import { monopolyFactory } from './Monopoly';
 import { ChannelClient } from '@statechannels/channel-client';
 import { ChannelState } from './Channel';
 import { AppData } from './types';
+import Vue from 'vue';
 const niceware = require("niceware")
 
 export class Connection {
     private self;
-    private peers;
     private name;
     private channelClient;
     private channelProvider;
     private channelState;
     private host: boolean;
+    public playerCount;
+    public players;
     public id;
 
     constructor(name: string, channelProvider, host: boolean = false) {
         this.name = name;
-        this.peers = [];
         this.host = host;
-        this.id = niceware.generatePassphrase(8).join('-');
+        this.players = new Map();
+        this.playerCount = 0;
+        this.id = niceware.generatePassphrase(8).join('-').toLowerCase();
         this.self = new Peer(this.id, {
             config: {
                 'iceServers': [{
@@ -39,14 +42,21 @@ export class Connection {
             console.log('connection opened');
             conn.on('data', async (data) => {
                 console.log("parsing received data")
-                await this.parseData(data);
+                await this.parseData(conn, data);
             });
             conn.on('open', () => {
-                if (host) {// && !this.peers.some(peer => peer.peer === conn.peer)) {
+                if (host) {// && !this.players.has(conn.peer) {
                     console.log('Received new connection from ' + conn.peer)
-                    console.log('Sending existing peers ' + JSON.stringify(this.peers.map(peer => peer.peer)));
-                    conn.send({ type: 'sync', data: this.peers.map(peer => peer.peer) });
-                    this.peers.push(conn);
+                    console.log('Sending existing peers ' + JSON.stringify(Array.from(this.players.keys())));
+                    conn.send({ type: 'sync', data: Array.from(this.players.keys()) });
+                }
+                conn.send({ type: 'setName', data: this.name });
+                if (!this.players.has(conn.peer)) {
+                    console.log('Adding new connection to peers list')
+                    this.players.set(conn.peer, { name: conn.metadata.name, conn: conn });
+                    this.playerCount++;
+                    console.log(this.players);
+                    console.log(this.playerCount);
                 }
             });
         });
@@ -60,16 +70,22 @@ export class Connection {
             this.sendData({ type: "message", data: message });
         });
         this.channelClient.onChannelUpdated((channelState: ChannelState<AppData>) => {
-            
+            console.log('received channel update');
+            console.log(channelState);
         })
     }
 
     peersAsParticipants () {
-        let participants = [{ destination: this.channelProvider.destinationAddress, participantId: this.channelProvider.destinationAddress, signingAddress: this.channelProvider.signingAddress}]
-        return participants.concat(this.peers.map(peer => ({ destination: peer.metadata.destinationAddress, participantId: peer.metadata.destinationAddress, signingAddress: peer.metadata.signingAddress })));
+        let participants = [{ destination: this.channelProvider.destinationAddress, participantId: this.channelProvider.destinationAddress, signingAddress: this.channelProvider.signingAddress }]
+        return participants.concat(Array.from(this.players.keys()).filter(player => player != this.id).map(id => {
+            console.log(id);
+            const player = this.players.get(id);
+            return { destination: player.conn.metadata.destinationAddress, participantId: player.conn.metadata.destinationAddress, signingAddress: player.conn.metadata.signingAddress }
+        }));
     }
 
     async createChannel () {
+        console.log('creating channel');
         this.channelState = await this.channelClient.createChannel(
             this.peersAsParticipants(),
             [],
@@ -77,26 +93,31 @@ export class Connection {
         );
     }
 
-    public joinRoom (roomId: string) {
-        if (!this.peers.some(peer => peer.peer === roomId)) {
+    public joinRoom (roomId: string, joiningHost = false) {
+        if (!this.players.has(roomId)) {
             const conn = this.self.connect(roomId, { metadata: { name: this.name, destinationAddress: this.channelProvider.destinationAddress, signingAddress: this.channelProvider.signingAddress } });
             conn.on('open', () => {
                 console.log("established connection to host");
             });
             conn.on('data', async (data) => {
-                await this.parseData(data);
+                await this.parseData(conn, data);
             });
-            this.peers.push(conn);
+            this.players.set(roomId, {name: '', conn: conn});
+            this.playerCount++;
         }
     }
 
-    async parseData (data) {
+    async parseData (conn, data) {
         console.log("received data " + JSON.stringify(data));
         switch (data.type) {
             case 'sync':
                 data.data.forEach(peer => {
                     this.joinRoom(peer);
                 });
+                break;
+            case 'setName':
+                this.players.set(conn.peer, { name: data.data, conn: conn });
+                this.playerCount++;
                 break;
             case 'message':
                 await this.channelClient.pushMessage(data.data);
@@ -105,8 +126,9 @@ export class Connection {
     }
 
     sendData (data) {
-        this.peers.forEach(peer => {
-            peer.send(data);
+        this.players.forEach(player => {
+            if (Object.prototype.hasOwnProperty.call(player, 'conn'))
+                player.conn.send(data);
         });
     }
 }
