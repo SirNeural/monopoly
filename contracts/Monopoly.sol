@@ -850,15 +850,4 @@ contract Monopoly is ForceMoveApp {
         );
         _;
     }
-
-    modifier stakeUnchanged(
-        MonopolyData memory fromGameData,
-        MonopolyData memory toGameData
-    ) {
-        require(
-            fromGameData.stake == toGameData.stake,
-            "The stake should be the same between commitments"
-        );
-        _;
-    }
 }
