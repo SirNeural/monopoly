@@ -76,16 +76,16 @@ export class Connection {
     }
 
     peersAsParticipants () {
-        let participants = [{ destination: this.channelProvider.destinationAddress, participantId: this.channelProvider.destinationAddress, signingAddress: this.channelProvider.signingAddress }]
+        let participants = [{ destination: this.channelProvider.destinationAddress, participantId: this.id, signingAddress: this.channelProvider.signingAddress }]
         return participants.concat(Array.from(this.players.keys()).filter(player => player != this.id).map(id => {
-            console.log(id);
             const player = this.players.get(id);
-            return { destination: player.conn.metadata.destinationAddress, participantId: player.conn.metadata.destinationAddress, signingAddress: player.conn.metadata.signingAddress }
+            return { destination: player.conn.metadata.destinationAddress, participantId: id, signingAddress: player.conn.metadata.signingAddress }
         }));
     }
 
     async createChannel () {
         console.log('creating channel');
+        console.log(this.peersAsParticipants());
         this.channelState = await this.channelClient.createChannel(
             this.peersAsParticipants(),
             [],
@@ -120,6 +120,8 @@ export class Connection {
                 this.playerCount++;
                 break;
             case 'message':
+                console.log('sending wallet message');
+                console.log(data.data);
                 await this.channelClient.pushMessage(data.data);
                 break;
         }
