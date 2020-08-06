@@ -21,7 +21,8 @@ export class MonopolyClient {
   ): Promise<ChannelState> {
     const appDefinition = CONTRACT_ADDRESS;
     const appData = encodeAppData(appAttrs);
-
+    console.log('creating channelin client');
+    console.log(this.channelClient);
     const channelResult = await this.channelClient.createChannel(
       participants,
       allocations,
@@ -29,7 +30,8 @@ export class MonopolyClient {
       appData,
       'Direct'
     );
-
+    console.log('converting result to channel state')
+    console.log(channelResult);
     return toChannelState(channelResult);
   }
 

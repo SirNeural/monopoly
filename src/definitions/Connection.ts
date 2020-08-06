@@ -5,6 +5,7 @@ import { ChannelClient } from '@statechannels/channel-client';
 import { ChannelState } from './Channel';
 import { AppData } from './types';
 import Vue from 'vue';
+import { bigNumberify } from 'ethers/utils';
 const niceware = require("niceware")
 
 export class Connection {
@@ -65,8 +66,11 @@ export class Connection {
     }
 
     public setChannelClient () {
+        console.log('creating channel client');
         this.channelClient = new MonopolyClient(new ChannelClient(this.channelProvider));
         this.channelClient.onMessageQueued((message) => {
+            console.log('sending data');
+            console.log(message);
             this.sendData({ type: "message", data: message });
         });
         this.channelClient.onChannelUpdated((channelState: ChannelState<AppData>) => {
@@ -85,12 +89,17 @@ export class Connection {
 
     async createChannel () {
         console.log('creating channel');
-        console.log(this.peersAsParticipants());
+        const participants = this.peersAsParticipants();
+        console.log(participants);
         this.channelState = await this.channelClient.createChannel(
-            this.peersAsParticipants(),
-            [],
-            monopolyFactory(this.peersAsParticipants())
+            participants,
+            [{
+                token: '0x0', // We are sticking to ETH here
+                allocationItems: participants.map(participants => ({destination: participants.destination, amount: bigNumberify(0).toHexString()}))
+            }],
+            monopolyFactory(participants)
         );
+        console.log(this.channelState);
     }
 
     public joinRoom (roomId: string, joiningHost = false) {
