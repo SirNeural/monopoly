@@ -1620,7 +1620,7 @@
     ethers "4.0.45"
     eventemitter3 "4.0.0"
 
-"@statechannels/channel-provider@*":
+"@statechannels/channel-provider@*", "@statechannels/channel-provider@0.0.5":
   version "0.0.5"
   resolved "https://registry.yarnpkg.com/@statechannels/channel-provider/-/channel-provider-0.0.5.tgz#bf61011ffe4a01e268909ad2ec460664ddd05e4d"
   integrity sha512-lL6VXoWL99RziDz9guet9w3kAOVUHUVLXq3NXp8I34oOu+WNVfCqb1+jDPpevrEdTsO+4yh91+qPMaoAco5Dew==
@@ -1635,15 +1635,6 @@
   integrity sha512-C8/sDn0a+75ieN26ACni58tZ2lzHNbCW5S/Kp32mtxmDY4d8G+lbjC9uIdc6vuNRs11KD7RuMPxP4ZBd6z2KLw==
   dependencies:
     ajv "6.11.0"
-
-"@statechannels/iframe-channel-provider@^0.0.1":
-  version "0.0.1"
-  resolved "https://registry.yarnpkg.com/@statechannels/iframe-channel-provider/-/iframe-channel-provider-0.0.1.tgz#0c0e0c3eb44e2dedff494c89ab32f184e7f1d680"
-  integrity sha512-xqKo82SsNLwXibt1cwCdad7ao2IGSb5iXjaaNcxfZUrtu6nt0b52Rx2L9RXgXE33aTQZ/2yvKvxsz6Wk03lWwg==
-  dependencies:
-    eventemitter3 "4.0.0"
-    guid-typescript "1.0.9"
-    pino "6.2.0"
 
 "@statechannels/nitro-protocol@^0.1.6":
   version "0.1.6"

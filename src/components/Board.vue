@@ -18,24 +18,53 @@
       </div>
     </div>
 
-    <div class="flex flex-col flex-wrap min-h-screen justify-around m-8 pb-12" ref="control">
+    <div
+      class="flex flex-col flex-wrap min-h-screen justify-around m-8 pb-12"
+      ref="control"
+    >
       <div class="flex flex-col items-start">
-        <button class="p-2 select-none text-xl text-white" @click="joinRoom">Join Room</button>
-        <button class="p-2 select-none text-xl text-white" @click="createRoom">Create Room</button>
-        <button v-if="host" class="p-2 select-none text-xl text-white" @click="startGame">Start Game</button>
-        <button class="p-2 select-none text-xl text-white" @click="randomDiceThrow">Roll Dice</button>
-        <button class="p-2 select-none text-xl text-white" @click="rotate">Rotate</button>
+        <button class="p-2 select-none text-xl text-white" @click="joinRoom">
+          Join Room
+        </button>
+        <button class="p-2 select-none text-xl text-white" @click="createRoom">
+          Create Room
+        </button>
+        <button
+          v-if="host"
+          class="p-2 select-none text-xl text-white"
+          @click="startGame"
+        >
+          Start Game
+        </button>
+        <button
+          class="p-2 select-none text-xl text-white"
+          @click="randomDiceThrow"
+        >
+          Roll Dice
+        </button>
+        <button class="p-2 select-none text-xl text-white" @click="rotate">
+          Rotate
+        </button>
       </div>
       <div class="flex flex-col items-end">
-        <div class="flex flex-row normal-case select-none py-2" v-for="p in getPeers" :key="p.name">
+        <div
+          class="flex flex-row normal-case select-none py-2"
+          v-for="p in getPeers"
+          :key="p.name"
+        >
           <span class="text-white text-lg">{{ p.name }}:</span>
           <span class="ml-1 text-white text-xl">$1500</span>
         </div>
       </div>
       <div class="text-lg text-white normal-case">
-        <div v-hide="three.diceValues.length == 0 || !dice.every(dice => dice.isFinished())">
+        <div
+          v-hide="
+            three.diceValues.length == 0 ||
+              !dice.every((dice) => dice.isFinished())
+          "
+        >
           Last Roll:
-          {{ three.diceValues.map(dice => dice.value).join(", ") }}
+          {{ three.diceValues.map((dice) => dice.value).join(", ") }}
         </div>
       </div>
     </div>
@@ -43,7 +72,7 @@
 </template>
 
 <script>
-require('@statechannels/iframe-channel-provider');
+require("@statechannels/channel-provider");
 import { Connection } from "../definitions/Connection";
 import { mapGetters } from "vuex";
 import * as THREE from "three";
@@ -63,7 +92,7 @@ import Animal from "../services/three/game/Animal";
 import {
   CSS3DObject,
   CSS3DSprite,
-  CSS3DRenderer
+  CSS3DRenderer,
 } from "three/examples/jsm/renderers/CSS3DRenderer.js";
 export default {
   data() {
@@ -92,44 +121,44 @@ export default {
           moveSpeed: 16,
           deltaTime: 0,
           player: null,
-          kForward: new THREE.Vector3(0, 0, 1)
+          kForward: new THREE.Vector3(0, 0, 1),
         },
-        then: 0
+        then: 0,
       },
       models: {
         pig: {
           url:
-            "https://threejsfundamentals.org/threejs/resources/models/animals/Pig.gltf"
+            "https://threejsfundamentals.org/threejs/resources/models/animals/Pig.gltf",
         },
         cow: {
           url:
-            "https://threejsfundamentals.org/threejs/resources/models/animals/Cow.gltf"
+            "https://threejsfundamentals.org/threejs/resources/models/animals/Cow.gltf",
         },
         llama: {
           url:
-            "https://threejsfundamentals.org/threejs/resources/models/animals/Llama.gltf"
+            "https://threejsfundamentals.org/threejs/resources/models/animals/Llama.gltf",
         },
         pug: {
           url:
-            "https://threejsfundamentals.org/threejs/resources/models/animals/Pug.gltf"
+            "https://threejsfundamentals.org/threejs/resources/models/animals/Pug.gltf",
         },
         sheep: {
           url:
-            "https://threejsfundamentals.org/threejs/resources/models/animals/Sheep.gltf"
+            "https://threejsfundamentals.org/threejs/resources/models/animals/Sheep.gltf",
         },
         zebra: {
           url:
-            "https://threejsfundamentals.org/threejs/resources/models/animals/Zebra.gltf"
+            "https://threejsfundamentals.org/threejs/resources/models/animals/Zebra.gltf",
         },
         horse: {
           url:
-            "https://threejsfundamentals.org/threejs/resources/models/animals/Horse.gltf"
+            "https://threejsfundamentals.org/threejs/resources/models/animals/Horse.gltf",
         },
         knight: {
           url:
-            "https://threejsfundamentals.org/threejs/resources/models/knight/KnightCharacter.gltf"
-        }
-      }
+            "https://threejsfundamentals.org/threejs/resources/models/knight/KnightCharacter.gltf",
+        },
+      },
     };
   },
   props: ["elements"],
@@ -140,12 +169,15 @@ export default {
       players: "getPlayers",
       avatars: "getAvatars",
       peer: "getPeer",
-      sortedPlayers: "getSortedPlayers"
+      sortedPlayers: "getSortedPlayers",
       // lastRoll: "getLastRoll"
     }),
     getPeers() {
-      return (Object.prototype.hasOwnProperty.call(this.connection, 'players') && this.connection.playerCount) ? Array.from(this.connection.players.values()) : [];
-    }
+      return Object.prototype.hasOwnProperty.call(this.connection, "players") &&
+        this.connection.playerCount
+        ? Array.from(this.connection.players.values())
+        : [];
+    },
   },
   watch: {
     lastRoll(value) {
@@ -166,7 +198,7 @@ export default {
     angle(value) {
       this.three.controls.rotationX.set(value);
       this.three.controls.update();
-    }
+    },
   },
   methods: {
     rotate() {
@@ -178,7 +210,7 @@ export default {
       this.$store.dispatch("rollDice", this.username);
     },
     async setPlayer() {
-      if(this.username) {
+      if (this.username) {
         return true;
       }
       const username = await this.$swal({
@@ -187,13 +219,17 @@ export default {
           element: "input",
           attributes: {
             placeholder: "Enter your username",
-            type: "text"
-          }
-        }
+            type: "text",
+          },
+        },
       });
       if (username) {
         this.username = username;
-        this.connection = new Connection(this.username, window.channelProvider, this.host);
+        this.connection = new Connection(
+          this.username,
+          window.channelProvider,
+          this.host
+        );
         return true;
       }
       return false;
@@ -208,7 +244,7 @@ export default {
             `<div class="flex flex-col text-center"><div class="text-2xl">Use this code to invite others:</div><div id="roomCode" class="text-lg font-bold uppercase tracking-wide mt-2 p-4 bg-gray-200 rounded" onclick="window.getSelection().selectAllChildren(document.getElementById('roomCode'));">${code}</div></div>`
           ),
           icon: "success",
-          className: "normal-case"
+          className: "normal-case",
         });
       }
     },
@@ -221,9 +257,9 @@ export default {
             element: "input",
             attributes: {
               placeholder: "Enter the room code",
-              type: "text"
-            }
-          }
+              type: "text",
+            },
+          },
         });
         if (code) {
           this.connection.joinRoom(code.toLowerCase());
@@ -233,7 +269,7 @@ export default {
               `<div class="flex flex-col text-center"><div class="text-2xl">Use this code to invite others:</div><div id="roomCode" class="text-lg font-bold uppercase tracking-wide mt-2 p-4 bg-gray-200 rounded" onclick="window.getSelection().selectAllChildren(document.getElementById('roomCode'));">${code}</div></div>`
             ),
             icon: "success",
-            className: "normal-case"
+            className: "normal-case",
           });
         }
       }
@@ -298,7 +334,7 @@ export default {
         "pug",
         "sheep",
         "zebra",
-        "horse"
+        "horse",
       ];
 
       // position animals in a spiral.
@@ -332,7 +368,7 @@ export default {
         this.models[key].size = size.length();
         const animsByName = {};
 
-        this.models[key].gltf.animations.forEach(clip => {
+        this.models[key].gltf.animations.forEach((clip) => {
           animsByName[clip.name] = clip;
           // Should really fix this in .blend file
           if (clip.name === "Walk") {
@@ -375,9 +411,9 @@ export default {
       let diceValues = [];
 
       for (var i = 0; i < this.dice.length; i++) {
-        this.dice[i].getObject().position.x = -1 * (i+1) * 15;
+        this.dice[i].getObject().position.x = -1 * (i + 1) * 15;
         this.dice[i].getObject().position.z = 75;
-        this.dice[i].getObject().position.y = 1 * (i+1) * 15;
+        this.dice[i].getObject().position.y = 1 * (i + 1) * 15;
         this.dice[i].getObject().quaternion.x =
           ((Math.random() * 90 - 45) * Math.PI) / 180;
         this.dice[i].getObject().quaternion.y =
@@ -399,20 +435,22 @@ export default {
         this.dice[i].updateBodyFromMesh();
         diceValues.push({
           dice: this.dice[i],
-          value: Math.floor(Math.random() * 6) + 1
+          value: Math.floor(Math.random() * 6) + 1,
         });
       }
       this.$set(this.three, "diceValues", diceValues);
       DiceManager.prepareValues(diceValues);
-    }
+    },
   },
   beforeDestroy: function() {
     window.removeEventListener("resize", this.onWindowResize);
   },
   mounted() {
-    window.channelProvider.mountWalletComponent('https://xstate-wallet.statechannels.org/').then(() => {
-      window.channelProvider.enable();
-    });
+    window.channelProvider
+      .mountWalletComponent("https://xstate-wallet.statechannels.org/")
+      .then(() => {
+        window.channelProvider.enable();
+      });
 
     this.three.renderers.css = new CSS3DRenderer();
     this.three.renderers.css.setSize(window.innerWidth, window.innerHeight);
@@ -483,12 +521,12 @@ export default {
     {
       const gltfLoader = new GLTFLoader(manager);
       for (const model of Object.values(this.models)) {
-        gltfLoader.load(model.url, gltf => {
+        gltfLoader.load(model.url, (gltf) => {
           // let piece = gltf.scene.children[0];
           // piece.traverse(n => { if ( n.isMesh ) {
-          //   n.castShadow = true; 
+          //   n.castShadow = true;
           //   n.receiveShadow = true;
-          //   if(n.material.map) n.material.map.anisotropy = 1; 
+          //   if(n.material.map) n.material.map.anisotropy = 1;
           // }});
           model.gltf = gltf;
         });
@@ -529,7 +567,7 @@ export default {
     this.three.table.rotation.x = -Math.PI / 2;
 
     Object.defineProperty(this.three.board.center, "rotation", {
-      value: this.three.table.rotation
+      value: this.three.table.rotation,
     });
 
     this.three.control = new CSS3DSprite(this.$refs.control);
@@ -550,7 +588,7 @@ export default {
     let floorBody = new CANNON.Body({
       mass: 0,
       shape: new CANNON.Plane(),
-      material: DiceManager.floorBodyMaterial
+      material: DiceManager.floorBodyMaterial,
     });
 
     this.world.add(floorBody);
@@ -566,7 +604,7 @@ export default {
     // setInterval(this.randomDiceThrow, 3000);
     window.addEventListener("resize", this.onWindowResize);
     requestAnimationFrame(this.animate);
-  }
+  },
 };
 </script>
 
