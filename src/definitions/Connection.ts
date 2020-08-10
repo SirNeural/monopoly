@@ -76,7 +76,13 @@ export class Connection {
     }
 
     peersAsParticipants () {
-        let participants = [{ destination: this.channelProvider.destinationAddress, participantId: this.id, signingAddress: this.channelProvider.signingAddress }]
+        let participants = [{ destination: this.channelProvider.destinationAddress, participantId: this.id, signingAddress: this.channelProvider.signingAddress },
+            {
+                participantId: '0x590A3Bd8D4A3b78411B3bDFb481E44e85C7345c0',
+                signingAddress: '0x590A3Bd8D4A3b78411B3bDFb481E44e85C7345c0',
+                destination: '0x63e3fb11830c01ac7c9c64091c14bb6cbaac9ac7'
+              }
+            ]
         return participants.concat(Array.from(this.players.keys()).filter(player => player != this.id).map(id => {
             const player = this.players.get(id);
             return { destination: player.conn.metadata.destinationAddress, participantId: id, signingAddress: player.conn.metadata.signingAddress }
@@ -88,7 +94,21 @@ export class Connection {
         console.log(this.peersAsParticipants());
         this.channelState = await this.channelClient.createChannel(
             this.peersAsParticipants(),
-            [],
+            [
+                {
+                  token: '0x0',
+                  allocationItems: [
+                    {
+                      destination: '0x63e3fb11830c01ac7c9c64091c14bb6cbaac9ac7',
+                      amount: '0x00000000000000000000000000000000000000000000000006f05b59d3b20000'
+                    },
+                    {
+                      destination: '0x63e3fb11830c01ac7c9c64091c14bb6cbaac9ac7',
+                      amount: '0x00000000000000000000000000000000000000000000000006f05b59d3b20000'
+                    }
+                  ]
+                }
+              ],
             monopolyFactory(this.peersAsParticipants())
         );
     }
