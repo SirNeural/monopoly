@@ -1,5 +1,6 @@
 import { MonopolyData, MonopolyState, PropertyStatus, SpaceType, AppData, PositionType, ActionType } from './types';
 import { Participant } from '@statechannels/client-api-schema';
+import { randomChannelId } from '@statechannels/nitro-protocol'
 import { defaultAbiCoder, bigNumberify } from 'ethers/utils';
 import { AddressZero, HashZero } from 'ethers/constants';
 import { spaces, properties } from '../store/properties.json';
@@ -9,7 +10,7 @@ function toMonopolyData (appData: AppData): MonopolyData {
     const defaults: MonopolyData = {
         positionType: appData.type,
         state: {
-            channelId: HashZero,
+            channelId: randomChannelId(),
             nonce: bigNumberify(0),
             currentPlayer: bigNumberify(0),
             houses: bigNumberify(32),
@@ -29,7 +30,7 @@ export function monopolyFactory (players: Participant[]): MonopolyData {
     return {
         positionType: PositionType.Start,
         state: {
-            channelId: HashZero,
+            channelId: randomChannelId(),
             nonce: bigNumberify(0),
             currentPlayer: bigNumberify(0),
             houses: bigNumberify(32),
@@ -139,7 +140,7 @@ export function decodeAppData (appDataBytes: string): AppData {
         appDataBytes
     )[0];
 
-    const stake = parameters.stake.toString();
+    //const stake = parameters.stake.toString();
     const positionType = parameters.positionType as PositionType;
     const monopolyState = defaultAbiCoder.decode(
         ['tuple(bytes32 channelId, uint256 nonce, uint256 currentPlayer, uint256 houses, uint256 hotels, bytes playersBytes, bytes spacesBytes, bytes chanceBytes, bytes communityChestBytes)'],
@@ -186,7 +187,7 @@ export function decodeAppData (appDataBytes: string): AppData {
         message: item.message
     }));
     const turns = defaultAbiCoder.decode(
-        ['uint256 player, uint256[] purchased, uint256[] mortgaged, uint256[] unmortgaged, uint256[] housesAdded, uint256[] housesRemoved)[]'],
+        ['tuple(uint256 player, uint256[] purchased, uint256[] mortgaged, uint256[] unmortgaged, uint256[] housesAdded, uint256[] housesRemoved)[]'],
         parameters.appTurnBytes
     )[0].map(item => ({
         player: item.player,

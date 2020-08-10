@@ -4,8 +4,11 @@ import { monopolyFactory } from './Monopoly';
 import { ChannelClient } from '@statechannels/channel-client';
 import { ChannelState } from './Channel';
 import { AppData } from './types';
-import Vue from 'vue';
+import { HashZero } from 'ethers/constants';
+import { CONTRACT_ADDRESS } from '../constants/contract';
+import { MonopolyFactory } from '../../typechain/MonopolyFactory';
 import { bigNumberify } from 'ethers/utils';
+import ethers from 'ethers';
 const niceware = require("niceware")
 
 export class Connection {
@@ -13,7 +16,8 @@ export class Connection {
     private name;
     private channelClient;
     private channelProvider;
-    private channelState;
+    public channelState;
+    public channelStateCount;
     private host: boolean;
     public playerCount;
     public players;
@@ -24,6 +28,7 @@ export class Connection {
         this.host = host;
         this.players = new Map();
         this.playerCount = 0;
+        this.channelStateCount = 0;
         this.id = niceware.generatePassphrase(8).join('-').toLowerCase();
         this.self = new Peer(this.id, {
             config: {
@@ -76,14 +81,16 @@ export class Connection {
         this.channelClient.onChannelUpdated((channelState: ChannelState<AppData>) => {
             console.log('received channel update');
             console.log(channelState);
+            this.channelState = channelState;
+            this.channelStateCount++;
         })
     }
 
     peersAsParticipants () {
-        let participants = [{ destination: this.channelProvider.destinationAddress, participantId: this.id, signingAddress: this.channelProvider.signingAddress }]
+        let participants = [{ destination: this.channelProvider.destinationAddress, participantId: this.channelProvider.signingAddress, signingAddress: this.channelProvider.signingAddress }]
         return participants.concat(Array.from(this.players.keys()).filter(player => player != this.id).map(id => {
             const player = this.players.get(id);
-            return { destination: player.conn.metadata.destinationAddress, participantId: id, signingAddress: player.conn.metadata.signingAddress }
+            return { destination: player.conn.metadata.destinationAddress, participantId: player.conn.metadata.signingAddress, signingAddress: player.conn.metadata.signingAddress }
         }));
     }
 
@@ -91,15 +98,23 @@ export class Connection {
         console.log('creating channel');
         const participants = this.peersAsParticipants();
         console.log(participants);
+        const allocations = [{
+            token: '0x0',
+            allocationItems: participants.map(participants => ({ destination: participants.destination, amount: HashZero }))
+        }];
+        console.log(allocations);
         this.channelState = await this.channelClient.createChannel(
             participants,
-            [{
-                token: '0x0', // We are sticking to ETH here
-                allocationItems: participants.map(participants => ({destination: participants.destination, amount: bigNumberify(0).toHexString()}))
-            }],
+            allocations,
             monopolyFactory(participants)
         );
         console.log(this.channelState);
+    }
+
+    async applyChange () {
+        const provider = new ethers.providers.InfuraProvider("goerli", process.env.INFURA_API_KEY);
+        const contract = MonopolyFactory.connect(CONTRACT_ADDRESS, provider);
+        //contract.apply
     }
 
     public joinRoom (roomId: string, joiningHost = false) {

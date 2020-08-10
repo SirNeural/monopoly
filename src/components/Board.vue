@@ -74,6 +74,7 @@
 <script>
 require("@statechannels/channel-provider");
 import { Connection } from "../definitions/Connection";
+import { PositionType } from "../definitions/types";
 import { mapGetters } from "vuex";
 import * as THREE from "three";
 import * as CANNON from "cannon";
@@ -178,6 +179,12 @@ export default {
         ? Array.from(this.connection.players.values())
         : [];
     },
+    state() {
+      return Object.prototype.hasOwnProperty.call(this.connection, "channelState") &&
+        this.connection.channelStateCount
+        ? this.connection.channelState
+        : [];
+    }
   },
   watch: {
     lastRoll(value) {
@@ -199,6 +206,30 @@ export default {
       this.three.controls.rotationX.set(value);
       this.three.controls.update();
     },
+    state: {
+      handler(value) {
+        switch(value.positionType) {
+          case PositionType.Start:
+            break;
+          case PositionType.Rolling:
+
+            break;
+          case PositionType.Moving:
+            break;
+          case PositionType.Action:
+            break;
+          case PositionType.Maintenance:
+            break;
+          case PositionType.NextPlayer:
+            break;
+          case PositionType.Bankrupt:
+            break;
+          case PositionType.End:
+            break;
+        }
+      },
+      deep: true
+    }
   },
   methods: {
     rotate() {
