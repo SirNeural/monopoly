@@ -1,7 +1,9 @@
+// @ts-ignore
+import { Uint256, Bytes32, Address } from '@statechannels/client-api-schema/src/types'
 import { MonopolyData, MonopolyState, PropertyStatus, SpaceType, AppData, PositionType, ActionType } from './types';
 import { Participant } from '@statechannels/client-api-schema';
 import { randomChannelId } from '@statechannels/nitro-protocol'
-import { defaultAbiCoder, bigNumberify } from 'ethers/utils';
+import { defaultAbiCoder, bigNumberify, keccak256, arrayify } from 'ethers/utils';
 import { AddressZero, HashZero } from 'ethers/constants';
 import { spaces, properties } from '../store/properties.json';
 import { chance, communityChest } from '../store/cards.json';
@@ -26,7 +28,7 @@ function toMonopolyData (appData: AppData): MonopolyData {
     return { ...defaults, ...appData };
 }
 
-export function monopolyFactory (players: Participant[]): MonopolyData {
+export function monopolyDataFactory (players: Participant[]): MonopolyData {
     return {
         positionType: PositionType.Start,
         state: {
@@ -91,6 +93,21 @@ export function loadSpaces (spaces, properties) {
             owner: AddressZero
         };
     })
+}
+
+export function rand (nonce: Uint256,
+    sender: Address,
+    channelId: Bytes32,
+    offset: number,
+    max: number) {
+    return arrayify(
+        keccak256(
+            defaultAbiCoder.encode(
+                ['tuple(uint256 nonce, address sender, bytes32 channelId)'],
+                [{ nonce: nonce, sender: sender, channelId: channelId}]
+            )
+        )
+    )[offset] % max;
 }
 
 export function encodeAppData (appData: AppData): string {

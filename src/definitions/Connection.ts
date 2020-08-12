@@ -1,14 +1,13 @@
 import Peer from 'peerjs';
 import { MonopolyClient } from './MonopolyClient';
-import { monopolyFactory } from './Monopoly';
+import { monopolyDataFactory } from './Monopoly';
 import { ChannelClient } from '@statechannels/channel-client';
 import { ChannelState } from './Channel';
-import { AppData } from './types';
+import { AppData, MonopolyState, Turn } from './types';
 import { HashZero } from 'ethers/constants';
 import { CONTRACT_ADDRESS } from '../constants/contract';
 import { MonopolyFactory } from '../../typechain/MonopolyFactory';
-import { bigNumberify } from 'ethers/utils';
-import ethers from 'ethers';
+import { InfuraProvider } from 'ethers/providers';
 const niceware = require("niceware")
 
 export class Connection {
@@ -22,6 +21,8 @@ export class Connection {
     public playerCount;
     public players;
     public id;
+    private infuraProvider;
+    private infuraContract;
 
     constructor(name: string, channelProvider, host: boolean = false) {
         this.name = name;
@@ -30,6 +31,8 @@ export class Connection {
         this.playerCount = 0;
         this.channelStateCount = 0;
         this.id = niceware.generatePassphrase(8).join('-').toLowerCase();
+        this.infuraProvider = new InfuraProvider("goerli", process.env.INFURA_API_KEY);
+        this.infuraContract = MonopolyFactory.connect(CONTRACT_ADDRESS, this.infuraProvider);
         this.self = new Peer(this.id, {
             config: {
                 'iceServers': [{
@@ -106,15 +109,22 @@ export class Connection {
         this.channelState = await this.channelClient.createChannel(
             participants,
             allocations,
-            monopolyFactory(participants)
+            monopolyDataFactory(participants)
         );
         console.log(this.channelState);
     }
 
-    async applyChange () {
-        const provider = new ethers.providers.InfuraProvider("goerli", process.env.INFURA_API_KEY);
-        const contract = MonopolyFactory.connect(CONTRACT_ADDRESS, provider);
-        //contract.apply
+    async applyChange (transition: string, state: MonopolyState, turn: Turn) {
+        const nextState = await this.infuraContract[transition](state, turn);
+        const newState = {
+            ...this.channelState,
+            appData: {
+                ...this.channelState.appData,
+                state: nextState,
+                turns: this.channelState.appData.turns.concat(turn)
+            }
+        }
+        return this.channelClient.updateChannel(this.channelState.channelId, this.channelState.allocations, newState);
     }
 
     public joinRoom (roomId: string, joiningHost = false) {

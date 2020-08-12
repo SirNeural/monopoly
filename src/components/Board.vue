@@ -74,6 +74,7 @@
 <script>
 require("@statechannels/channel-provider");
 import { Connection } from "../definitions/Connection";
+import { rand } from "../definitions/Monopoly";
 import { PositionType } from "../definitions/types";
 import { mapGetters } from "vuex";
 import * as THREE from "three";
@@ -210,19 +211,29 @@ export default {
       handler(value) {
         switch(value.positionType) {
           case PositionType.Start:
+            //this.connection.applyChange('applyStartToRolling', value
             break;
           case PositionType.Rolling:
-
+            //this.connection.applyChange('applyRollingToMoving', value, 
+            //this.connection.applyChange('applyRollingToNextPlayer', value, 
             break;
           case PositionType.Moving:
+            //this.connection.applyChange('applyMovingToAction', value, 
             break;
           case PositionType.Action:
+            //this.connection.applyChange('applyActionToRolling', value, 
+            //this.connection.applyChange('applyActionToMaintainence', value, 
             break;
           case PositionType.Maintenance:
+            //this.connection.applyChange('applyMaintainenceToNextPlayer', value, 
+            //this.connection.applyChange('applyMaintainenceToBankrupt', value, 
             break;
           case PositionType.NextPlayer:
+            //this.connection.applyChange('applyNextPlayerToRolling', value, 
             break;
           case PositionType.Bankrupt:
+            //this.connection.applyChange('applyBankruptToNextPlayer', value, 
+            //this.connection.applyChange('applyBankruptToEnd', value, 
             break;
           case PositionType.End:
             break;
@@ -466,7 +477,7 @@ export default {
         this.dice[i].updateBodyFromMesh();
         diceValues.push({
           dice: this.dice[i],
-          value: Math.floor(Math.random() * 6) + 1,
+          value: rand(this.channelState.appData.nonce, this.channelState.participants[this.channelState.appData.currentPlayer.toNumber()].id, this.channelState.appData.state.channelId, i, 6),
         });
       }
       this.$set(this.three, "diceValues", diceValues);

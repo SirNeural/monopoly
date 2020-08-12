@@ -838,7 +838,7 @@ contract Monopoly is ForceMoveApp {
         return
             uint8(
                 keccak256(
-                    abi.encodePacked(nonce + 1, sender, channelId)
+                    abi.encode(nonce, sender, channelId)
                 )[offset]
             ) % max;
     }
