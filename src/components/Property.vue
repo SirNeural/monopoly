@@ -3,7 +3,7 @@
     <div class="container text-center">
       <div :class="`color-bar h-8 bg-${property.color}`"></div>
       <div class="name">{{ name }}</div>
-      <div class="price">Price: ${{ property.price }}</div>
+      <div class="price">Price: ${{ property.prices[0] }}</div>
     </div>
   </div>
 </template>

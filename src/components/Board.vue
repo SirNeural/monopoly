@@ -59,7 +59,7 @@
       <div class="text-lg text-white normal-case">
         <div
           v-hide="
-            this.state.state.nonce.toNumber() == 0 ||
+            this.state.state.positionType == 0 || this.state.state.positionType == 5 ||
               !dice.every((dice) => dice.isFinished())
           "
         >
