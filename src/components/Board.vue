@@ -429,7 +429,7 @@ export default {
         case PositionType.Moving:
           this.pieces.get(this.currentPlayer.id).move(this.squareNumToCoordinates(this.currentPlayer.position));
           break;
-        case PositionType.Action:
+        case PositionType.Action: {
           const value = this.position;
           const old = this.position - this.$store.getters.getDiceRoll.reduce((a,b) => a+b, 0);
           let delta = Math.floor(value / 10) - Math.floor(old / 10);
@@ -443,6 +443,7 @@ export default {
           // this.connection.applyChange('applyActionToRolling', value)
           // this.connection.applyChange('applyActionToMaintainence', value)
           break;
+          }
         case PositionType.Maintenance:
           // this.connection.applyChange('applyMaintainenceToNextPlayer', value)
           // this.connection.applyChange('applyMaintainenceToBankrupt', value)
