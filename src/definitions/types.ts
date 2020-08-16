@@ -1,6 +1,6 @@
 // @ts-ignore
 import { Uint256, Bytes32, Address } from '@statechannels/client-api-schema/src/types'
-
+import { Participant } from '@statechannels/client-api-schema';
 export enum PositionType {
     Start, // Setup game, allocate funds
     Rolling, //
@@ -39,6 +39,10 @@ export interface End extends MonopolyData {
 
 export type AppData = Start | Rolling | Moving | Action | Maintenance | NextPlayer | Bankrupt | End;
 
+export interface MonopolyParticipant extends Participant {
+    username?: string;
+    avatar?: string;
+}
 
 export enum SpaceType {
     Go,
@@ -82,9 +86,11 @@ export enum PropertyStatus {
 }
 
 export interface Space {
-    id: Uint256;
+    name: string;
+    color: string;
     spaceType: SpaceType;
     status: PropertyStatus;
+    id: number;
     prices: Uint256[];
     housePrice: Uint256;
     owner: Address;
@@ -92,12 +98,13 @@ export interface Space {
 
 export interface Turn {
     player: Uint256;
-    purchased: Uint256[];
-    mortgaged: Uint256[];
-    unmortgaged: Uint256[];
-    housesAdded: Uint256[];
-    housesRemoved: Uint256[];
+    purchased: number[];
+    mortgaged: number[];
+    unmortgaged: number[];
+    housesAdded: number[];
+    housesRemoved: number[];
 }
+
 
 export interface Card {
     message: string;
@@ -109,8 +116,8 @@ export interface MonopolyState {
     channelId: Bytes32;
     nonce: Uint256;
     currentPlayer: Uint256;
-    houses: Uint256;
-    hotels: Uint256;
+    houses: number;
+    hotels: number;
     players: Player[];
     spaces: Space[];
     chance: Card[];
@@ -125,11 +132,12 @@ export interface MonopolyData {
 
 export interface Player {
     name: string;
+    avatar: string;
     id: Address;
     bankrupt: boolean;
     balance: Uint256;
-    jailed: Uint256;
-    doublesRolled: Uint256;
-    position: Uint256;
-    getOutOfJailFreeCards: Uint256;
+    jailed: number;
+    doublesRolled: number;
+    position: number;
+    getOutOfJailFreeCards: number;
 }

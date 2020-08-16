@@ -1,8 +1,7 @@
 // @ts-ignore
 import { Uint256, Bytes32, Address } from '@statechannels/client-api-schema/src/types'
-import { MonopolyData, MonopolyState, PropertyStatus, SpaceType, AppData, PositionType, ActionType } from './types';
-import { Participant } from '@statechannels/client-api-schema';
-import { randomChannelId } from '@statechannels/nitro-protocol'
+import { MonopolyData, MonopolyState, PropertyStatus, SpaceType, AppData, PositionType, ActionType, MonopolyParticipant } from './types';
+import { randomChannelId } from '@statechannels/nitro-protocol';
 import { defaultAbiCoder, bigNumberify, keccak256, arrayify } from 'ethers/utils';
 import { AddressZero, HashZero } from 'ethers/constants';
 import { spaces, properties } from '../store/properties.json';
@@ -15,8 +14,8 @@ function toMonopolyData (appData: AppData): MonopolyData {
             channelId: randomChannelId(),
             nonce: bigNumberify(0),
             currentPlayer: bigNumberify(0),
-            houses: bigNumberify(32),
-            hotels: bigNumberify(12),
+            houses: 32,
+            hotels: 12,
             players: [],
             spaces: [],
             chance: [],
@@ -28,16 +27,16 @@ function toMonopolyData (appData: AppData): MonopolyData {
     return { ...defaults, ...appData };
 }
 
-export function monopolyDataFactory (players: Participant[]): MonopolyData {
+export function monopolyDataFactory (players: MonopolyParticipant[]): MonopolyData {
     return {
         positionType: PositionType.Start,
         state: {
             channelId: randomChannelId(),
             nonce: bigNumberify(0),
             currentPlayer: bigNumberify(0),
-            houses: bigNumberify(32),
-            hotels: bigNumberify(12),
-            players: players.map(player => ({ name: player.participantId, id: player.signingAddress, bankrupt: false, balance: 1500, jailed: 0, doublesRolled: 0, position: 0, getOutOfJailFreeCards: 0 })),
+            houses: 32,
+            hotels: 12,
+            players: players.map(player => ({ name: player.username ?? player.signingAddress, avatar: player.avatar ?? 'pig', id: player.signingAddress, bankrupt: false, balance: 1500, jailed: 0, doublesRolled: 0, position: 0, getOutOfJailFreeCards: 0 })),
             spaces: loadSpaces(spaces, properties),
             chance: loadCards(chance),
             communityChest: loadCards(communityChest)
@@ -85,14 +84,27 @@ export function loadCards (cards) {
 export function loadSpaces (spaces, properties) {
     return spaces.map((space, i) => {
         return {
+            name: space,
+            color: Object.prototype.hasOwnProperty.call(properties, space) ? properties[space].color : '',
             id: bigNumberify(i),
             spaceType: spaceToType(properties, space),
             status: PropertyStatus.Unowned,
-            prices: Object.prototype.hasOwnProperty.call(properties, space) ? properties[space].rent : [],
+            prices: Object.prototype.hasOwnProperty.call(properties, space) ? [properties[space].price].concat(properties[space].rent, [properties[space].mortgage]) : [],
             housePrice: Object.prototype.hasOwnProperty.call(properties, space) ? properties[space].house : [],
             owner: AddressZero
         };
     })
+}
+
+export function turnFactory (player: Uint256) {
+    return {
+        player: player,
+        purchased: [],
+        mortgaged: [],
+        unmortgaged: [],
+        housesAdded: [],
+        housesRemoved: []
+    }
 }
 
 export function rand (nonce: Uint256,
@@ -116,11 +128,11 @@ export function encodeAppData (appData: AppData): string {
 
 export function encodeMonopolyData (monopolyData: MonopolyData): string {
     const playersBytes = defaultAbiCoder.encode(
-        ['tuple(string name, address id, bool bankrupt, uint256 balance, uint256 jailed, uint256 doublesRolled, uint256 position, uint256 getOutOfJailFreeCards)[]'],
+        ['tuple(string name, string avatar, address id, bool bankrupt, uint256 balance, uint8 jailed, uint8 doublesRolled, uint8 position, uint8 getOutOfJailFreeCards)[]'],
         [monopolyData.state.players]
     );
     const spacesBytes = defaultAbiCoder.encode(
-        ['tuple(uint256 id, uint8 spaceType, uint8 status, uint256[] prices, uint256 housePrice, address owner)[]'],
+        ['tuple(string name, string color, uint8 spaceType, uint8 status, uint8 id, uint256[] prices, uint256 housePrice, address owner)[]'],
         [monopolyData.state.spaces]
     );
     const chanceBytes = defaultAbiCoder.encode(
@@ -133,11 +145,11 @@ export function encodeMonopolyData (monopolyData: MonopolyData): string {
     );
     const encodedMonopolyState = { ...monopolyData.state, playersBytes: playersBytes, spacesBytes: spacesBytes, chanceBytes: chanceBytes, communityChestBytes: communityChestBytes };
     const appStateBytes = defaultAbiCoder.encode(
-        ['tuple(bytes32 channelId, uint256 nonce, uint256 currentPlayer, uint256 houses, uint256 hotels, bytes playersBytes, bytes spacesBytes, bytes chanceBytes, bytes communityChestBytes)'],
+        ['tuple(bytes32 channelId, uint256 nonce, uint256 currentPlayer, uint8 houses, uint8 hotels, bytes playersBytes, bytes spacesBytes, bytes chanceBytes, bytes communityChestBytes)'],
         [encodedMonopolyState]
     );
     const appTurnBytes = defaultAbiCoder.encode(
-        ['tuple(uint256 player, uint256[] purchased, uint256[] mortgaged, uint256[] unmortgaged, uint256[] housesAdded, uint256[] housesRemoved)[]'],
+        ['tuple(uint256 player, uint8[] purchased, uint8[] mortgaged, uint8[] unmortgaged, uint8[] housesAdded, uint8[] housesRemoved)[]'],
         [monopolyData.turns]
     )
     const encodedMonopolyData = { ...monopolyData, appStateBytes: appStateBytes, appTurnBytes: appTurnBytes };
@@ -160,14 +172,15 @@ export function decodeAppData (appDataBytes: string): AppData {
     //const stake = parameters.stake.toString();
     const positionType = parameters.positionType as PositionType;
     const monopolyState = defaultAbiCoder.decode(
-        ['tuple(bytes32 channelId, uint256 nonce, uint256 currentPlayer, uint256 houses, uint256 hotels, bytes playersBytes, bytes spacesBytes, bytes chanceBytes, bytes communityChestBytes)'],
+        ['tuple(bytes32 channelId, uint256 nonce, uint256 currentPlayer, uint8 houses, uint8 hotels, bytes playersBytes, bytes spacesBytes, bytes chanceBytes, bytes communityChestBytes)'],
         parameters.appStateBytes
     )[0];
     const players = defaultAbiCoder.decode(
-        ['tuple(string name, address id, bool bankrupt, uint256 balance, uint256 jailed, uint256 doublesRolled, uint256 position, uint256 getOutOfJailFreeCards)[]'],
+        ['tuple(string name, string avatar, address id, bool bankrupt, uint256 balance, uint8 jailed, uint8 doublesRolled, uint8 position, uint8 getOutOfJailFreeCards)[]'],
         monopolyState.playersBytes
     )[0].map(item => ({
         name: item.name,
+        avatar: item.avatar,
         id: item.id,
         bankrupt: item.bankrupt,
         balance: item.balance,
@@ -177,12 +190,14 @@ export function decodeAppData (appDataBytes: string): AppData {
         getOutOfJailFreeCards: item.getOutOfJailFreeCards
     }));
     const spaces = defaultAbiCoder.decode(
-        ['tuple(uint256 id, uint8 spaceType, uint8 status, uint256 prices, uint256 housePrice, address owner)[]'],
+        ['tuple(string name, string color, uint8 spaceType, uint8 status, uint8 id, uint256[] prices, uint256 housePrice, address owner)[]'],
         monopolyState.spacesBytes
     )[0].map(item => ({
-        id: item.id,
+        name: item.name,
+        color: item.color,
         spaceType: item.spaceType,
         status: item.status,
+        id: item.id,
         prices: item.prices,
         housePrice: item.housePrice,
         owner: item.owner
@@ -204,7 +219,7 @@ export function decodeAppData (appDataBytes: string): AppData {
         message: item.message
     }));
     const turns = defaultAbiCoder.decode(
-        ['tuple(uint256 player, uint256[] purchased, uint256[] mortgaged, uint256[] unmortgaged, uint256[] housesAdded, uint256[] housesRemoved)[]'],
+        ['tuple(uint256 player, uint8[] purchased, uint8[] mortgaged, uint8[] unmortgaged, uint8[] housesAdded, uint8[] housesRemoved)[]'],
         parameters.appTurnBytes
     )[0].map(item => ({
         player: item.player,

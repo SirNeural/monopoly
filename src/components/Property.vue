@@ -10,6 +10,7 @@
 
 <script>
 import { mapGetters } from "vuex";
+import { PropertyStatus } from '../definitions/types'
 export default {
   data() {
     return {
@@ -28,7 +29,7 @@ export default {
       propertyOwner: "getPropertyOwner"
     }),
     owner() {
-      return this.propertyOwner(this.name);
+      return this.propertyOwner(this.name) == this.player.id;
     },
     isMonopoly() {
       return this.monopolies[this.property.color];
@@ -44,55 +45,55 @@ export default {
         content: this.$strToHtml(`
                 <div class="swal-title text-${this.property.color}">${
           this.name
-        } - $${this.property.price}</div>
+        } - $${this.property.prices[0]}</div>
                 <div class="flex flex-col text-center">
                             <div class="flex flex-row justify-between text-lg font-medium">
                             <div>
                             Rent:
                             </div>
-                            <div>$${this.property.rent[this.houses]}</div>
+                            <div>$${this.property.status == PropertyStatus.Monopoly ? this.property.prices[2] : this.property.prices[1]}</div>
                             </div>
                             <div class="flex flex-row justify-between py-1">
                             <div>
                             With one house:
                             </div>
-                            <div>$${this.property.rent[1]}</div>
+                            <div>$${this.property.prices[3]}</div>
                             </div>
                             <div class="flex flex-row justify-between py-1">
                             <div>
                             With two houses:
                             </div>
-                            <div>$${this.property.rent[2]}</div>
+                            <div>$${this.property.prices[4]}</div>
                             </div>
                             <div class="flex flex-row justify-between py-1">
                             <div>
                             With three houses:
                             </div>
-                            <div>$${this.property.rent[3]}</div>
+                            <div>$${this.property.prices[5]}</div>
                             </div>
                             <div class="flex flex-row justify-between py-1">
                             <div>
                             With four houses:
                             </div>
-                            <div>$${this.property.rent[4]}</div>
+                            <div>$${this.property.prices[6]}</div>
                             </div>
                             <div class="flex flex-row justify-between py-1">
                             <div>
                             With a hotel:
                             </div>
-                            <div>$${this.property.rent[5]}</div>
+                            <div>$${this.property.prices[7]}</div>
                             </div>
                             <div class="flex flex-row justify-center py-1 text-lg font-medium">
                             <div class="pr-4">
                             Mortgage Value:
                             </div>
-                            <div>$${this.property.mortgage}</div>
+                            <div>$${this.property.prices[8]}</div>
                             </div>
                             <div class="flex flex-row justify-center pt-1 text-lg font-medium">
                             <div class="pr-4">
                             Houses Cost:
                             </div>
-                            <div>$${this.property.house}</div>
+                            <div>$${this.property.housePrice}</div>
                             </div>
                             </div>`),
         className: "normal-case",
@@ -104,7 +105,7 @@ export default {
       if (buy) {
         this.$store.dispatch("buyProperty", {
           propertyName: this.name,
-          username: this.player.username
+          address: this.player.id
         });
         this.$swal({
           title: "Congratulations!",

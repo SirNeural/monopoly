@@ -62,9 +62,11 @@ contract Monopoly is ForceMoveApp {
     }
 
     struct Space {
-        uint256 id;
+        string name;
+        string color;
         SpaceType spaceType;
         PropertyStatus status;
+        uint8 id;
         uint256[9] prices;
         uint256 housePrice;
         address owner;
@@ -74,19 +76,19 @@ contract Monopoly is ForceMoveApp {
 
     struct Turn {
         uint256 player;
-        uint256[] purchased;
-        uint256[] mortgaged;
-        uint256[] unmortgaged;
-        uint256[] housesAdded;
-        uint256[] housesRemoved;
+        uint8[] purchased;
+        uint8[] mortgaged;
+        uint8[] unmortgaged;
+        uint8[] housesAdded;
+        uint8[] housesRemoved;
     }
 
     struct MonopolyStateEncoded {
         bytes32 channelId;
         uint256 nonce;
         uint256 currentPlayer;
-        uint256 houses; // Do i want to implement this?
-        uint256 hotels; // Do i want to implement this?
+        uint8 houses; // Do i want to implement this?
+        uint8 hotels; // Do i want to implement this?
         bytes playersBytes;
         bytes spacesBytes;
         bytes chanceBytes;
@@ -97,8 +99,8 @@ contract Monopoly is ForceMoveApp {
         bytes32 channelId;
         uint256 nonce;
         uint256 currentPlayer;
-        uint256 houses; // Do i want to implement this?
-        uint256 hotels; // Do i want to implement this?
+        uint8 houses; // Do i want to implement this?
+        uint8 hotels; // Do i want to implement this?
         Player[] players;
         Space[40] spaces;
         Card[16] chance;
@@ -124,13 +126,14 @@ contract Monopoly is ForceMoveApp {
 
     struct Player {
         string name;
+        string avatar;
         address id;
         bool bankrupt;
         uint256 balance;
-        uint256 jailed;
-        uint256 doublesRolled;
-        uint256 position;
-        uint256 getOutOfJailFreeCards;
+        uint8 jailed;
+        uint8 doublesRolled;
+        uint8 position;
+        uint8 getOutOfJailFreeCards;
     }
 
     // Random Instance; 0 - First Dice, 1 - Second Dice, 2 - Community/Chance Cards
@@ -397,14 +400,14 @@ contract Monopoly is ForceMoveApp {
             fromGameState.channelId,
             0,
             6
-        );
+        ) + 1;
         result[1] = rand(
             fromGameState.nonce,
             currentPlayer.id,
             fromGameState.channelId,
             1,
             6
-        );
+        ) + 1;
         return result;
     }
 
@@ -416,7 +419,7 @@ contract Monopoly is ForceMoveApp {
         Player memory currentPlayer = getCurrentPlayer(fromGameState);
         bool commChest = fromGameState.spaces[currentPlayer.position]
             .spaceType == SpaceType.CommunityChest;
-        uint256 randNum = rand(
+        uint8 randNum = rand(
             fromGameState.nonce,
             currentPlayer.id,
             fromGameState.channelId,
@@ -479,7 +482,7 @@ contract Monopoly is ForceMoveApp {
         } else {
             require(fromPlayer.jailed == 0);
         }
-        uint256 totalMovement = roll[0] + roll[1];
+        uint8 totalMovement = roll[0] + roll[1];
         toGameState.players[fromGameState.currentPlayer].position =
             (fromPlayer.position + totalMovement) %
             40;
@@ -549,7 +552,7 @@ contract Monopoly is ForceMoveApp {
                 .getOutOfJailFreeCards += 1;
         } else if (card.action == ActionType.MoveSpaces) {
             toGameState.players[fromGameState.currentPlayer].position =
-                (getCurrentPlayer(fromGameState).position + card.amount) %
+                (getCurrentPlayer(fromGameState).position + uint8(card.amount)) %
                 40;
             if (
                 card.amount > 0 &&
@@ -570,11 +573,29 @@ contract Monopoly is ForceMoveApp {
                 fromGameState.players[fromGameState.currentPlayer].id
             ) {
                 toGameState.players[fromGameState.currentPlayer]
-                    .balance -= playerSpace.prices[uint256(playerSpace.status)];
+                    .balance -= playerSpace.prices[uint8(playerSpace.status)];
+            }
+        } else if (card.action == ActionType.MoveBackSpaces) {
+            toGameState.players[fromGameState.currentPlayer].position =
+                (getCurrentPlayer(fromGameState).position - uint8(card.amount)) %
+                40;
+            if (playerSpace.status == PropertyStatus.Unowned) {
+                toGameState.players[fromGameState.currentPlayer]
+                    .balance -= playerSpace.prices[0];
+                toGameState.spaces[player.position].owner = player.id;
+                toGameState.spaces[player.position].status = PropertyStatus
+                    .Owned;
+            } else if (
+                playerSpace.status != PropertyStatus.Mortgaged &&
+                playerSpace.owner !=
+                fromGameState.players[fromGameState.currentPlayer].id
+            ) {
+                toGameState.players[fromGameState.currentPlayer]
+                    .balance -= playerSpace.prices[uint8(playerSpace.status)];
             }
         } else if (card.action == ActionType.MoveToSpace) {
-            toGameState.players[fromGameState.currentPlayer].position = card
-                .amount;
+            toGameState.players[fromGameState.currentPlayer].position = uint8(card
+                .amount);
             if (
                 toGameState.players[fromGameState.currentPlayer].position <
                 getCurrentPlayer(fromGameState).position
@@ -593,7 +614,7 @@ contract Monopoly is ForceMoveApp {
                 fromGameState.players[fromGameState.currentPlayer].id
             ) {
                 toGameState.players[fromGameState.currentPlayer]
-                    .balance -= playerSpace.prices[uint256(playerSpace.status)];
+                    .balance -= playerSpace.prices[uint8(playerSpace.status)];
             }
         } else if (card.action == ActionType.MoveToNearestUtility) {
             if (getCurrentPlayer(fromGameState).position > 28) {
@@ -673,10 +694,10 @@ contract Monopoly is ForceMoveApp {
                 if (playerSpace.spaceType == SpaceType.Utility) {
                     toGameState.players[fromGameState.currentPlayer].balance -=
                         (roll[0] + roll[1]) *
-                        playerSpace.prices[uint256(playerSpace.status)];
+                        playerSpace.prices[uint8(playerSpace.status)];
                 } else {
                     toGameState.players[fromGameState.currentPlayer]
-                        .balance -= playerSpace.prices[uint256(
+                        .balance -= playerSpace.prices[uint8(
                         playerSpace.status
                     )];
                 }

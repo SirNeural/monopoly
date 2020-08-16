@@ -83,177 +83,16 @@ export default {
       name: "Community Chest",
       active: false,
       color: "blue-600",
-      cards: [
-        {
-          content: ["Advance to Go", "Collect $200"],
-          action: () => {
-            this.$store.dispatch("credit", {
-              username: this.player.username,
-              amount: 200
-            });
-          }
-        },
-        {
-          content: ["Bank error in your favor", "Collect $75"],
-          action: () => {
-            this.$store.dispatch("credit", {
-              username: this.player.username,
-              amount: 75
-            });
-          }
-        },
-        {
-          content: ["Doctor's fees", "Pay $50"],
-          action: () => {
-            this.$store.dispatch("credit", {
-              username: this.player.username,
-              amount: 50
-            });
-          }
-        },
-        {
-          content: [
-            "Get out of jail free",
-            "This card may be kept until needed, or sold"
-          ],
-          action: () => {
-            this.$store.dispatch("addJailPass", this.player.username);
-          }
-        },
-        {
-          content: [
-            "Go directly to Jail",
-            "Do not pass Go",
-            "Do not collect $200"
-          ],
-          action: () => {
-            this.$store.dispatch("jailPlayer", this.player.username);
-          }
-        },
-        {
-          content: ["It is your birthday", "Collect $10 from each player"],
-          action: () => {
-            this.$store.dispatch("debitAllPlayers", {
-              except: this.player.username,
-              amount: 10
-            });
-          }
-        },
-        {
-          content: [
-            "Grand Opera Night",
-            "Collect $50 from every player for opening night seats"
-          ],
-          action: () => {
-            this.$store.dispatch("debitAllPlayers", {
-              except: this.player.username,
-              amount: 50
-            });
-          }
-        },
-        {
-          content: ["Income Tax refund", "Collect $20"],
-          action: () => {
-            this.$store.dispatch("credit", {
-              username: this.player.username,
-              amount: 20
-            });
-          }
-        },
-        {
-          content: ["Life Insurance Matures", "Collect $100"],
-          action: () => {
-            this.$store.dispatch("credit", {
-              username: this.player.username,
-              amount: 100
-            });
-          }
-        },
-        {
-          content: ["Pay Hospital Fees of $100"],
-          action: () => {
-            this.$store.dispatch("debit", {
-              username: this.player.username,
-              amount: 100
-            });
-          }
-        },
-        {
-          content: ["Pay School Fees of $50"],
-          action: () => {
-            this.$store.dispatch("debit", {
-              username: this.player.username,
-              amount: 50
-            });
-          }
-        },
-        {
-          content: ["Receive $25 Consultancy Fee"],
-          action: () => {
-            this.$store.dispatch("credit", {
-              username: this.player.username,
-              amount: 25
-            });
-          }
-        },
-        {
-          content: [
-            "You are assessed for street repairs",
-            "$40 per house, $115 per hotel"
-          ],
-          action: () => {} // NEED TO DO
-        },
-        {
-          content: [
-            "You have won second prize in a beauty contest",
-            "Collect $10"
-          ],
-          action: () => {
-            this.$store.dispatch("credit", {
-              username: this.player.username,
-              amount: 10
-            });
-          }
-        },
-        {
-          content: ["You inherit $100"],
-          action: () => {
-            this.$store.dispatch("credit", {
-              username: this.player.username,
-              amount: 100
-            });
-          }
-        },
-        {
-          content: ["Sale of stock", "Collect $50"],
-          action: () => {
-            this.$store.dispatch("credit", {
-              username: this.player.username,
-              amount: 50
-            });
-          }
-        },
-        {
-          content: ["Holiday Fund matures", "Collect $100"],
-          action: () => {
-            this.$store.dispatch("credit", {
-              username: this.player.username,
-              amount: 100
-            });
-          }
-        }
-      ]
     };
   },
   computed: {
     ...mapGetters({
       player: "getCurrentPlayer",
-      random: "getRandomNumber"
+      card: "getCommunityChest"
     })
   },
   methods: {
     async popup() {
-      const card = this.cards[Math.floor(this.random * this.cards.length)];
       await this.$swal({
         content: this.$strToHtml(
           `<div class="flex flex-row justify-center p-4"><svg
@@ -329,11 +168,11 @@ export default {
                 <div class="flex flex-col text-center">
                 <div class="flex flex-row justify-center text-xl py-1 font-medium">
                             <div>
-                            ${card.content[0]}
+                            ${this.card.message.split('–')[0]}
                             </div>
                 </div>
                 <div class="flex flex-row justify-center text-lg py-2"><div>` +
-            card.content
+            this.card.message.split('–')
               .slice(1)
               .join(
                 '</div></div><div class="flex flex-row justify-center text-lg py-2"><div>'
@@ -342,7 +181,7 @@ export default {
         ),
         className: "normal-case"
       });
-      card.action();
+      this.$store.dispatch('drawCard', {address: this.player.id, type: 'communityChest'});
     }
   }
 };

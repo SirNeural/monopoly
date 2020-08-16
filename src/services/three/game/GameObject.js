@@ -19,6 +19,10 @@ class GameObject {
     parent.add(this.transform);
   }
 
+  move (position) {
+    this.transform.position.copy(position);
+  }
+
   addComponent(ComponentType, ...args) {
     const component = new ComponentType(this, ...args);
     this.components.push(component);

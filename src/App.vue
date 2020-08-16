@@ -50,7 +50,7 @@ export default {
     this.elements = this.spaces.map((space, index) => {
       if (index % 5 === 0) {
         if (index % 10 === 0) {
-          switch (space) {
+          switch (space.name) {
             case "Go":
               return createElement(Go);
             case "Jail":
@@ -62,10 +62,10 @@ export default {
             default:
           }
         } else {
-          return createElement(Railroad, { props: { name: space } });
+          return createElement(Railroad, { props: { name: space.name } });
         }
       }
-      switch (space) {
+      switch (space.name) {
         case "Chance":
           return createElement(Chance);
         case "Community Chest":
@@ -79,7 +79,7 @@ export default {
         case "Income Tax":
           return createElement(IncomeTax);
         default:
-          return createElement(Property, { props: { name: space } });
+          return createElement(Property, { props: { name: space.name } });
       }
     });
     const south = createElement(

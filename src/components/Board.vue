@@ -38,9 +38,9 @@
         </button>
         <button
           class="p-2 select-none text-xl text-white"
-          @click="randomDiceThrow"
+          @click="nextState()"
         >
-          Roll Dice
+          Next State
         </button>
         <button class="p-2 select-none text-xl text-white" @click="rotate">
           Rotate
@@ -49,22 +49,22 @@
       <div class="flex flex-col items-end">
         <div
           class="flex flex-row normal-case select-none py-2"
-          v-for="p in getPeers"
-          :key="p.name"
+          v-for="player in players"
+          :key="player.name"
         >
-          <span class="text-white text-lg">{{ p.name }}:</span>
-          <span class="ml-1 text-white text-xl">$1500</span>
+          <span class="text-white text-lg">{{ player.name }}:</span>
+          <span class="ml-1 text-white text-xl">${{ player.balance }}</span>
         </div>
       </div>
       <div class="text-lg text-white normal-case">
         <div
           v-hide="
-            three.diceValues.length == 0 ||
+            this.state.state.nonce.toNumber() == 0 ||
               !dice.every((dice) => dice.isFinished())
           "
         >
           Last Roll:
-          {{ three.diceValues.map((dice) => dice.value).join(", ") }}
+          {{ this.lastRoll.join(", ") }}
         </div>
       </div>
     </div>
@@ -74,7 +74,6 @@
 <script>
 require("@statechannels/channel-provider");
 import { Connection } from "../definitions/Connection";
-import { rand } from "../definitions/Monopoly";
 import { PositionType } from "../definitions/types";
 import { mapGetters } from "vuex";
 import * as THREE from "three";
@@ -100,30 +99,21 @@ export default {
   data() {
     return {
       angle: 0,
-      username: "",
-      room: "",
       host: false,
       connection: {},
-      tmp: new THREE.Vector3(),
       world: {},
       dice: [],
-      pieces: [],
-      lastRoll: "",
-      position: 0,
+      pieces: new Map(),
       three: {
-        diceValues: [],
         scenes: {},
         renderers: {},
         board: {},
-        pieces: [],
         mixers: [],
         globals: {
           debug: false,
           time: 0,
           moveSpeed: 16,
           deltaTime: 0,
-          player: null,
-          kForward: new THREE.Vector3(0, 0, 1),
         },
         then: 0,
       },
@@ -166,80 +156,28 @@ export default {
   props: ["elements"],
   computed: {
     ...mapGetters({
-      player: "getCurrentPlayer",
-      // position: "getCurrentPlayerPosition",
-      players: "getPlayers",
-      avatars: "getAvatars",
-      peer: "getPeer",
-      sortedPlayers: "getSortedPlayers",
-      // lastRoll: "getLastRoll"
+      state: 'getState',
+      players: 'getPlayers',
+      lastRoll: 'getDiceRoll',
+      currentPlayer: 'getCurrentPlayer',
+      position: 'getCurrentPlayerPosition',
+      username: 'getSelfUsername',
     }),
-    getPeers() {
-      return Object.prototype.hasOwnProperty.call(this.connection, "players") &&
-        this.connection.playerCount
-        ? Array.from(this.connection.players.values())
-        : [];
-    },
-    state() {
-      return Object.prototype.hasOwnProperty.call(this.connection, "channelState") &&
-        this.connection.channelStateCount
-        ? this.connection.channelState
-        : [];
-    }
   },
   watch: {
-    lastRoll(value) {
-      this.position += value
-        .split(", ")
-        .reduce((a, b) => Number(a) + Number(b), 0);
-    },
-    position(value, old) {
-      let delta = Math.floor(value / 10) - Math.floor(old / 10);
-      if (delta < 0) {
-        delta += 4;
-      }
-      this.angle -= (Math.PI * delta) / 2;
-      this.elements[value].componentInstance.active = true;
-      this.elements[old].componentInstance.active = false;
-      this.elements[value].componentInstance.popup();
-    },
+    // position(value, old) {
+    //   let delta = Math.floor(value / 10) - Math.floor(old / 10);
+    //   if (delta < 0) {
+    //     delta += 4;
+    //   }
+    //   this.angle -= (Math.PI * delta) / 2;
+    //   this.elements[value].componentInstance.active = true;
+    //   this.elements[old].componentInstance.active = false;
+    //   this.elements[value].componentInstance.popup();
+    // },
     angle(value) {
       this.three.controls.rotationX.set(value);
       this.three.controls.update();
-    },
-    state: {
-      handler(value) {
-        switch(value.positionType) {
-          case PositionType.Start:
-            //this.connection.applyChange('applyStartToRolling', value
-            break;
-          case PositionType.Rolling:
-            //this.connection.applyChange('applyRollingToMoving', value, 
-            //this.connection.applyChange('applyRollingToNextPlayer', value, 
-            break;
-          case PositionType.Moving:
-            //this.connection.applyChange('applyMovingToAction', value, 
-            break;
-          case PositionType.Action:
-            //this.connection.applyChange('applyActionToRolling', value, 
-            //this.connection.applyChange('applyActionToMaintainence', value, 
-            break;
-          case PositionType.Maintenance:
-            //this.connection.applyChange('applyMaintainenceToNextPlayer', value, 
-            //this.connection.applyChange('applyMaintainenceToBankrupt', value, 
-            break;
-          case PositionType.NextPlayer:
-            //this.connection.applyChange('applyNextPlayerToRolling', value, 
-            break;
-          case PositionType.Bankrupt:
-            //this.connection.applyChange('applyBankruptToNextPlayer', value, 
-            //this.connection.applyChange('applyBankruptToEnd', value, 
-            break;
-          case PositionType.End:
-            break;
-        }
-      },
-      deep: true
     }
   },
   methods: {
@@ -266,12 +204,18 @@ export default {
         },
       });
       if (username) {
-        this.username = username;
         this.connection = new Connection(
-          this.username,
+          username,
           window.channelProvider,
+          this.$store,
+          this.setState.bind(this),
           this.host
         );
+        this.$store.dispatch('setSelf', {
+          username: username,
+          address: this.connection.getSigningAddress(),
+        })
+        this.setState(this.state);
         return true;
       }
       return false;
@@ -362,42 +306,29 @@ export default {
       this.three.renderers.css.setSize(window.innerWidth, window.innerHeight);
       this.three.renderers.webgl.setSize(window.innerWidth, window.innerHeight);
     },
-    init() {
-      this.prepModelsAndAnimations();
-
-      // const noteGO = this.three.gameObjectManager.createGameObject(
-      //   this.three.board.center,
-      //   "note"
-      // );
-
-      const animalModelNames = [
-        "pig",
-        "llama",
-        "pug",
-        "sheep",
-        "zebra",
-        "horse",
-      ];
-
-      // position animals in a spiral.
-      const numAnimals = 3;
-      for (let i = 0; i < numAnimals; ++i) {
-        const name =
-          animalModelNames[
-            Math.floor(Math.random() * animalModelNames.length) | 0
-          ];
+    createAvatar(player) {
+      if(!this.pieces.has(player.id)) {
+        const animalModelNames = [
+          "pig",
+          "llama",
+          "pug",
+          "sheep",
+          "zebra",
+          "horse",
+        ];
+        const name = animalModelNames.includes(player.avatar) ? player.avatar : "pig";
         const gameObject = this.three.gameObjectManager.createGameObject(
           this.three.board.outer,
           name,
           this.three.globals
         );
-        gameObject.transform.position.copy(this.squareNumToCoordinates(i));
-        const animalComponent = gameObject.addComponent(
+        gameObject.move(this.squareNumToCoordinates(0));
+        /*const animalComponent = */gameObject.addComponent(
           Animal,
           this.models[name],
           this.three.globals
         );
-        this.pieces.push(animalComponent);
+        this.pieces.set(player.id, gameObject);
       }
     },
     prepModelsAndAnimations() {
@@ -450,9 +381,7 @@ export default {
       // HANDLE JAIL/VISITING
     },
     randomDiceThrow() {
-      let diceValues = [];
-
-      for (var i = 0; i < this.dice.length; i++) {
+      let diceValues = this.lastRoll.map((value, i) => {
         this.dice[i].getObject().position.x = -1 * (i + 1) * 15;
         this.dice[i].getObject().position.z = 75;
         this.dice[i].getObject().position.y = 1 * (i + 1) * 15;
@@ -475,14 +404,60 @@ export default {
             50 * Math.random()
           );
         this.dice[i].updateBodyFromMesh();
-        diceValues.push({
+        return {
           dice: this.dice[i],
-          value: rand(this.channelState.appData.nonce, this.channelState.participants[this.channelState.appData.currentPlayer.toNumber()].id, this.channelState.appData.state.channelId, i, 6),
-        });
-      }
-      this.$set(this.three, "diceValues", diceValues);
+          value: value,
+        };
+      });
       DiceManager.prepareValues(diceValues);
     },
+    nextState() {
+      this.$store.dispatch('nextState');
+      this.setState(this.state);
+    },
+    setState(state) {
+      console.log('setting new state')
+      switch(state.positionType) {
+        case PositionType.Start:
+          state.state.players.forEach(player => this.createAvatar(player))
+          break;
+        case PositionType.Rolling:
+          this.$store.dispatch('rollDice', this.currentPlayer.id);
+          this.randomDiceThrow();
+          // check doubles
+          break;
+        case PositionType.Moving:
+          this.pieces.get(this.currentPlayer.id).move(this.squareNumToCoordinates(this.currentPlayer.position));
+          break;
+        case PositionType.Action:
+          const value = this.position;
+          const old = this.position - this.$store.getters.getDiceRoll.reduce((a,b) => a+b, 0);
+          let delta = Math.floor(value / 10) - Math.floor(old / 10);
+          if (delta < 0) {
+            delta += 4;
+          }
+          this.angle -= (Math.PI * delta) / 2;
+          this.elements[value].componentInstance.active = true;
+          this.elements[old].componentInstance.active = false;
+          this.elements[value].componentInstance.popup();
+          // this.connection.applyChange('applyActionToRolling', value)
+          // this.connection.applyChange('applyActionToMaintainence', value)
+          break;
+        case PositionType.Maintenance:
+          // this.connection.applyChange('applyMaintainenceToNextPlayer', value)
+          // this.connection.applyChange('applyMaintainenceToBankrupt', value)
+          break;
+        case PositionType.NextPlayer:
+          // this.connection.applyChange('applyNextPlayerToRolling', value)
+          break;
+        case PositionType.Bankrupt:
+          // this.connection.applyChange('applyBankruptToNextPlayer', value)
+          // this.connection.applyChange('applyBankruptToEnd', value)
+          break;
+        case PositionType.End:
+          break;
+      }
+    }
   },
   beforeDestroy: function() {
     window.removeEventListener("resize", this.onWindowResize);
@@ -558,7 +533,7 @@ export default {
     // this.addLight(-1050, 1050, 1050);
 
     const manager = new THREE.LoadingManager();
-    manager.onLoad = this.init.bind(this);
+    manager.onLoad = this.prepModelsAndAnimations.bind(this);
 
     {
       const gltfLoader = new GLTFLoader(manager);
