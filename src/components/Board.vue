@@ -176,7 +176,7 @@ export default {
     //   this.elements[value].componentInstance.popup();
     // },
     angle(value) {
-      this.three.controls.rotationX.set(value);
+      this.three.controls.rotate(value);
       this.three.controls.update();
     }
   },
