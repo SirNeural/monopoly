@@ -54,6 +54,8 @@ export class Connection {
                     console.log('Sending existing peers ' + JSON.stringify(Array.from(this.participants.keys())));
                     conn.send({ type: 'sync', data: Array.from(this.participants.keys()) });
                 }
+                console.log('connection opened, sending new player to vuex')
+                console.log(conn.metadata.signingAddress);
                 this.store.dispatch('newPlayer', { username: conn.metadata.name, address: conn.metadata.signingAddress})
                 conn.send({ type: 'setName', data: this.name });
                 if (!this.participants.has(conn.peer)) {
@@ -83,6 +85,8 @@ export class Connection {
             stateCallback(channelState.appData)
             // save to vuex
         });
+        console.log('adding self to vuex')
+        console.log(this.provider.signingAddress);
         this.store.dispatch('newPlayer', { username: this.name, address: this.provider.signingAddress });
     }
     public random (nonce, sender, channelId, offset, max) {
@@ -163,6 +167,8 @@ export class Connection {
                 break;
             case 'setName':
                 this.participants.set(conn.peer, { name: data.data, conn: conn });
+                console.log('sent connection to player, adding to vuex')
+                console.log(this.provider.signingAddress);
                 this.store.dispatch('newPlayer', { username: data.data, address: conn.metadata.signingAddress })
                 break;
             case 'setAvatar':

@@ -72,7 +72,7 @@
 </template>
 
 <script>
-require("@statechannels/channel-provider");
+require("@statechannels/iframe-channel-provider");
 import { Connection } from "../definitions/Connection";
 import { PositionType } from "../definitions/types";
 import { mapGetters } from "vuex";
@@ -486,7 +486,7 @@ export default {
   },
   mounted() {
     window.channelProvider
-      .mountWalletComponent("https://xstate-wallet.statechannels.org/")
+      .mountWalletComponent("http://xstate-wallet.statechannels.org/")
       .then(() => {
         window.channelProvider.enable();
       });
