@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import TWEEN from '@tweenjs/tween.js';
 
 import { removeArrayElement } from "../utils/utils";
 
@@ -20,7 +21,47 @@ class GameObject {
   }
 
   move (position) {
-    this.transform.position.copy(position);
+    return new Promise((resolve) => {
+      let coords = { x: this.transform.position.x, y: this.transform.position.y };
+      new TWEEN.Tween(coords)
+        .to({ x: position.x, y: position.y }, 2000)
+        .easing(TWEEN.Easing.Quadratic.InOut)
+        .onUpdate((coords) => {
+          this.transform.position.copy(new THREE.Vector3(coords.x, coords.y, this.transform.position.z));
+        })
+        .onComplete((coords) => {
+          resolve(coords)
+        })
+        .start();
+    })
+  }
+
+  moveArray (steps) {
+    return new Promise((resolve) => {
+      let coords = { x: this.transform.position.x, y: this.transform.position.y };
+      let tweens = steps.map(step => {
+        return new TWEEN.Tween(coords)
+          .to({
+            x: step.x,
+            y: step.y
+          }, 500)
+          .easing(TWEEN.Easing.Quadratic.InOut)
+          .onUpdate((coords) => {
+            this.transform.position.copy(new THREE.Vector3(coords.x, coords.y, this.transform.position.z));
+          });
+      });
+      for (let i = 0; i < tweens.length - 1; i++) {
+        tweens[i].chain(tweens[i + 1]);
+      }
+      tweens[tweens.length - 1].onComplete((coords) => {
+          resolve(coords)
+      })
+      tweens[0].start();
+    });
+  }
+
+  rotate(angle) {
+    this.transform.rotate(angle);
   }
 
   addComponent(ComponentType, ...args) {

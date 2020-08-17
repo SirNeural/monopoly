@@ -250,9 +250,20 @@ const mutations = {
     }
     Vue.set(player, "position", player.position + spaces);
   },
-  EXECUTE_ACTION: (state, address) => {
-
-  }
+  NEXT_NONCE: (state) => {
+    state.state.nonce++;
+  },
+  NEXT_PLAYER: (state) => {
+    let nextPlayer = (state.state.currentPlayer.toNumber() + 1) % state.state.players.length;
+    while (state.state.players[nextPlayer].bankrupt) {
+      nextPlayer++;
+    }
+    Vue.set(state.state, "currentPlayer", bigNumberify(nextPlayer));
+  },
+  SET_SELF: (state, { username, address }) => {
+    Vue.set(state.self, "username", username);
+    Vue.set(state.self, "address", address);
+  },
 };
 
 const actions = {
@@ -316,6 +327,15 @@ const actions = {
   },
   setPeer: (context, room) => {
     context.commit("SET_PEER", room);
+  },
+  nextNonce: (context) => {
+    context.commit("NEXT_NONCE");
+  },
+  nextPlayer: (context) => {
+    context.commit("NEXT_PLAYER");
+  },
+  setSelf: (context, { username, address }) => {
+    context.commit("SET_SELF", { username: username, address: address});
   }
 };
 

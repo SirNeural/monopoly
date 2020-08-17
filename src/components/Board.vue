@@ -76,6 +76,7 @@ require("@statechannels/channel-provider");
 import { Connection } from "../definitions/Connection";
 import { PositionType } from "../definitions/types";
 import { mapGetters } from "vuex";
+import TWEEN from '@tweenjs/tween.js';
 import * as THREE from "three";
 import * as CANNON from "cannon";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
@@ -297,6 +298,7 @@ export default {
         this.three.camera
       );
       this.three.renderers.css.render(this.three.scenes.css, this.three.camera);
+      TWEEN.update();
 
       requestAnimationFrame(this.animate);
     },
@@ -380,7 +382,14 @@ export default {
       return new THREE.Vector3(x_1, y_1, origin.z);
       // HANDLE JAIL/VISITING
     },
-    randomDiceThrow() {
+    until(conditionFunction) {
+      const poll = resolve => {
+        if(conditionFunction()) resolve();
+        else setTimeout(() => poll(resolve), 400);
+      }
+      return new Promise(poll);
+    },
+    async randomDiceThrow() {
       let diceValues = this.lastRoll.map((value, i) => {
         this.dice[i].getObject().position.x = -1 * (i + 1) * 15;
         this.dice[i].getObject().position.z = 75;
@@ -410,12 +419,13 @@ export default {
         };
       });
       DiceManager.prepareValues(diceValues);
+      return this.until(() => this.dice.every((dice) => dice.isFinished()));
     },
-    nextState() {
+    async nextState() {
       this.$store.dispatch('nextState');
       this.setState(this.state);
     },
-    setState(state) {
+    async setState(state) {
       console.log('setting new state')
       switch(state.positionType) {
         case PositionType.Start:
@@ -423,12 +433,19 @@ export default {
           break;
         case PositionType.Rolling:
           this.$store.dispatch('rollDice', this.currentPlayer.id);
-          this.randomDiceThrow();
+          await this.randomDiceThrow();
+          await this.nextState();
           // check doubles
           break;
-        case PositionType.Moving:
-          this.pieces.get(this.currentPlayer.id).move(this.squareNumToCoordinates(this.currentPlayer.position));
+        case PositionType.Moving: {
+          const newPosition = this.position;
+          const delta = this.$store.getters.getDiceRoll.reduce((a,b) => a+b, 0);
+          const oldPosition = newPosition - delta;
+          const steps = [...Array(delta).keys()].map(i => i + oldPosition + 1).map(i => this.squareNumToCoordinates(i))
+          await this.pieces.get(this.currentPlayer.id).moveArray(steps);
+          await this.nextState();
           break;
+        }
         case PositionType.Action: {
           const value = this.position;
           const old = this.position - this.$store.getters.getDiceRoll.reduce((a,b) => a+b, 0);
@@ -436,7 +453,7 @@ export default {
           if (delta < 0) {
             delta += 4;
           }
-          this.angle -= (Math.PI * delta) / 2;
+          this.angle += (Math.PI * delta) / 2;
           this.elements[value].componentInstance.active = true;
           this.elements[old].componentInstance.active = false;
           this.elements[value].componentInstance.popup();
@@ -449,9 +466,13 @@ export default {
           // this.connection.applyChange('applyMaintainenceToBankrupt', value)
           break;
         case PositionType.NextPlayer:
+          this.$store.dispatch('nextNonce');
+          this.$store.dispatch('nextPlayer');
+          await this.nextState();
           // this.connection.applyChange('applyNextPlayerToRolling', value)
           break;
         case PositionType.Bankrupt:
+          await this.nextState();
           // this.connection.applyChange('applyBankruptToNextPlayer', value)
           // this.connection.applyChange('applyBankruptToEnd', value)
           break;
