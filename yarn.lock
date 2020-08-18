@@ -1610,37 +1610,37 @@
   resolved "https://registry.yarnpkg.com/@solidity-parser/parser/-/parser-0.6.2.tgz#49707fc4e06649d39d6b25bdab2e9093d372ce50"
   integrity sha512-kUVUvrqttndeprLoXjI5arWHeiP3uh4XODAKbG+ZaWHCVQeelxCbnXBeWxZ2BPHdXgH0xR9dU1b916JhDhbgAA==
 
-"@statechannels/channel-client@^0.2.0":
-  version "0.2.0"
-  resolved "https://registry.yarnpkg.com/@statechannels/channel-client/-/channel-client-0.2.0.tgz#2f34d6a9b1fcc261d1e6e740a3d87b7e842c9bbc"
-  integrity sha512-bi8ZxDVtBJELchitZQWKVkRvkfacYMT4m0j4KfhAWXJspS/qy+2lP6hS2rxCExZW2IMMl+FJd7qSeI0DC0W9EQ==
+"@statechannels/channel-client@^0.3.0":
+  version "0.3.0"
+  resolved "https://registry.yarnpkg.com/@statechannels/channel-client/-/channel-client-0.3.0.tgz#c5db5b565973ab6feab5ce111b65900260f4feaf"
+  integrity sha512-k2VaU1R64byZuBx5n/epfn23rwUlDEISd7hRmcJ7LwZJlUuQX7IqtfhMaLbuMqr9iTSd5lg2kURJH1izYwJG5w==
   dependencies:
-    "@statechannels/client-api-schema" "^0.2.0"
-    "@statechannels/iframe-channel-provider" "^0.2.0"
+    "@statechannels/client-api-schema" "^0.3.0"
+    "@statechannels/iframe-channel-provider" "^0.3.0"
     ethers "4.0.45"
     eventemitter3 "4.0.0"
     loglevel "1.6.8"
 
-"@statechannels/client-api-schema@^0.2.0":
-  version "0.2.0"
-  resolved "https://registry.yarnpkg.com/@statechannels/client-api-schema/-/client-api-schema-0.2.0.tgz#d9aa77f236b733d53c2b58938e30bb760a1ef9e5"
-  integrity sha512-dtvIVNDiJUpXNHBhySnRu26fQJs7BhGSqcOr50Izc5TG4lXNwMpvOp6FyCu1muL8qrVVap1oxiEHG02vgu7Kiw==
+"@statechannels/client-api-schema@^0.3.0":
+  version "0.3.0"
+  resolved "https://registry.yarnpkg.com/@statechannels/client-api-schema/-/client-api-schema-0.3.0.tgz#e34379e05e7e6ea3b6615d9e73cbc2e78273107e"
+  integrity sha512-dQBFGGr624UIGFj8GrPt6LEcsu6BfVRp28OKDrDI4cOZgW+LCbmSIJOi0O61C4KfMX8v/3aNZyS8+glWRpEgeg==
   dependencies:
     ajv "6.11.0"
 
-"@statechannels/iframe-channel-provider@0.2.0", "@statechannels/iframe-channel-provider@^0.2.0":
-  version "0.2.0"
-  resolved "https://registry.yarnpkg.com/@statechannels/iframe-channel-provider/-/iframe-channel-provider-0.2.0.tgz#ec9903219f5cc0eea92bdb0343f60f83c6ad1bf6"
-  integrity sha512-8OZMM3r0/RBlpt/K38EoDWlHUBPQ723Fn3CCzjU7BlwoDKST8QpJTXgAPiGcNcVGtqhDzvuU1gbZUNQE5JLQAw==
+"@statechannels/iframe-channel-provider@0.3.0", "@statechannels/iframe-channel-provider@^0.3.0":
+  version "0.3.0"
+  resolved "https://registry.yarnpkg.com/@statechannels/iframe-channel-provider/-/iframe-channel-provider-0.3.0.tgz#a329a9630e352e32715a13f07bf9a5b91c0cacf0"
+  integrity sha512-Pe1oTg6Iib1E33YxHcI1an7tZ4Q1F1QIpSrxV3dJ5KSRiqYZ609zBGCi7tJJ1rxckbIcudLwtW/gEvUH1DRd8Q==
   dependencies:
     eventemitter3 "4.0.0"
     guid-typescript "1.0.9"
     pino "6.2.0"
 
-"@statechannels/nitro-protocol@^0.2.0":
-  version "0.2.0"
-  resolved "https://registry.yarnpkg.com/@statechannels/nitro-protocol/-/nitro-protocol-0.2.0.tgz#8966e7f8fcd537bc16fb9c4771c341fc6149041d"
-  integrity sha512-prqKa2vgjJZmJMjxPiUpuGEguDrNXLdCUKtIxEmOg9ghw3MzAhVB6Tll0ezWP14T2JD3XoMp8UYcqRE3dom7Yg==
+"@statechannels/nitro-protocol@^0.3.0":
+  version "0.3.0"
+  resolved "https://registry.yarnpkg.com/@statechannels/nitro-protocol/-/nitro-protocol-0.3.0.tgz#4c4c1f522b1a19f4bc3ac90b1cf2f891f227e706"
+  integrity sha512-2TY16Q18Po0b9cLmmHb/0PM2uWiyE9z/6VEYkxE8GFyZXXVtVSpM/2yNtRORMLurKf9XYvg7U83D+rN3mpXASg==
   dependencies:
     "@openzeppelin/contracts" "3.0.1"
     ethers "4.0.45"

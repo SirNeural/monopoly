@@ -486,7 +486,7 @@ export default {
   },
   mounted() {
     window.channelProvider
-      .mountWalletComponent("https://xstate-wallet.statechannels.org/")
+      .mountWalletComponent("https://xstate-wallet-v-0-3-0.statechannels.org/")
       .then(() => {
         window.channelProvider.enable();
       });
