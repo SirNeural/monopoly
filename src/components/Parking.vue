@@ -30,7 +30,7 @@ export default {
     },
     methods: {
         action() {
-            this.$store.dispatch("claimTax", this.player.username);
+            this.$store.dispatch("freeParking");
         },
         async popup() {
             await this.$swal({

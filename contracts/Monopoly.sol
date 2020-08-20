@@ -87,6 +87,7 @@ contract Monopoly is ForceMoveApp {
         bytes32 channelId;
         uint256 nonce;
         uint256 currentPlayer;
+        uint256 taxes;
         uint8 houses; // Do i want to implement this?
         uint8 hotels; // Do i want to implement this?
         bytes playersBytes;
@@ -99,6 +100,7 @@ contract Monopoly is ForceMoveApp {
         bytes32 channelId;
         uint256 nonce;
         uint256 currentPlayer;
+        uint256 taxes;
         uint8 houses; // Do i want to implement this?
         uint8 hotels; // Do i want to implement this?
         Player[] players;
@@ -162,7 +164,7 @@ contract Monopoly is ForceMoveApp {
         Space[40] memory spaces = abi.decode(temp.spacesBytes, (Space[40]));
         Card[16] memory chance = abi.decode(temp.chanceBytes, (Card[16]));
         Card[17] memory communityChest = abi.decode(temp.communityChestBytes, (Card[17]));
-        return MonopolyState(temp.channelId, temp.nonce, temp.currentPlayer, temp.houses, temp.hotels, players, spaces, chance, communityChest);
+        return MonopolyState(temp.channelId, temp.nonce, temp.currentPlayer, temp.taxes, temp.houses, temp.hotels, players, spaces, chance, communityChest);
     }
 
     function appTurns(bytes memory appTurnBytes)
@@ -457,6 +459,42 @@ contract Monopoly is ForceMoveApp {
         return fromGameState;
     }
 
+    function getUtilitiesOwnedByPlayer(
+        MonopolyState memory fromGameState, 
+        address owner
+    ) public pure returns (uint8) {
+        uint8 count = 0;
+        for(uint i = 0; i < fromGameState.spaces.length; i++) {
+            if(fromGameState.spaces[i].owner == owner && fromGameState.spaces[i].spaceType == SpaceType.Utility) {
+                count++;
+            }
+        }
+        return count;
+    }
+    function getRailroadsOwnedByPlayer(
+        MonopolyState memory fromGameState, 
+        address owner
+    ) public pure returns (uint8) {
+        uint8 count = 0;
+        for(uint i = 0; i < fromGameState.spaces.length; i++) {
+            if(fromGameState.spaces[i].owner == owner && fromGameState.spaces[i].spaceType == SpaceType.Railroad) {
+                count++;
+            }
+        }
+        return count;
+    }
+    function spacePartOfMonopoly(
+        MonopolyState memory fromGameState,
+        Space memory space
+    ) public pure returns (bool) {
+        for(uint i = 0; i < fromGameState.spaces.length; i++) {
+            if(keccak256(bytes(fromGameState.spaces[i].color)) == keccak256(bytes(space.color))) {
+                if(fromGameState.spaces[i].owner != space.owner) return false;
+            }
+        }
+        return true;
+    }
+
     function applyStartToRolling(
         MonopolyState memory fromGameState,
         Turn memory turn
@@ -646,6 +684,16 @@ contract Monopoly is ForceMoveApp {
         return toGameState;
     }
 
+    function arrayContains(
+        uint8[] memory array,
+        uint8 value
+    ) public pure returns (bool) {
+        for(uint i = 0; i < array.length; i++) {
+            if(array[i] == value) return true;
+        }
+        return false;
+    }
+
     function applyMovingToAction(
         MonopolyState memory fromGameState,
         Turn memory turn
@@ -670,10 +718,13 @@ contract Monopoly is ForceMoveApp {
             toGameState.players[fromGameState.currentPlayer].jailed = 1;
         } else if (playerSpace.spaceType == SpaceType.IncomeTax) {
             toGameState.players[fromGameState.currentPlayer].balance -= 75;
+            toGameState.taxes += 75;
         } else if (playerSpace.spaceType == SpaceType.LuxuryTax) {
             toGameState.players[fromGameState.currentPlayer].balance -= 200;
+            toGameState.taxes += 75;
         } else if (playerSpace.spaceType == SpaceType.FreeParking) {
-            // to implement, house rules
+            toGameState.players[fromGameState.currentPlayer].balance += toGameState.taxes;
+            toGameState.taxes = 0;
         } else if (playerSpace.spaceType == SpaceType.Go) {
             toGameState.players[fromGameState.currentPlayer].balance += 200;
         } else if (
@@ -681,20 +732,34 @@ contract Monopoly is ForceMoveApp {
             playerSpace.spaceType == SpaceType.Railroad ||
             playerSpace.spaceType == SpaceType.Utility
         ) {
-            if (playerSpace.status == PropertyStatus.Unowned) {
+            if (playerSpace.status == PropertyStatus.Unowned && arrayContains(turn.purchased, playerSpace.id)) {
                 toGameState.players[fromGameState.currentPlayer]
                     .balance -= playerSpace.prices[0];
                 toGameState.spaces[player.position].owner = player.id;
-                // check for monopolies
+                toGameState.spaces[player.position].status == PropertyStatus.Owned;
+                bool monopoly = spacePartOfMonopoly(toGameState, toGameState.spaces[player.position]);
+                if(monopoly) {
+                    for(uint i = 0; i < toGameState.spaces.length; i++) {
+                        if(keccak256(bytes(toGameState.spaces[i].color)) == keccak256(bytes(toGameState.spaces[player.position].color))) {
+                            toGameState.spaces[i].status == PropertyStatus.Monopoly;
+                        }
+                    }
+                }
             } else if (
                 playerSpace.status != PropertyStatus.Mortgaged &&
                 playerSpace.owner !=
                 fromGameState.players[fromGameState.currentPlayer].id
             ) {
                 if (playerSpace.spaceType == SpaceType.Utility) {
+                    uint8 utilitiesOwned = getUtilitiesOwnedByPlayer(fromGameState, playerSpace.owner);
+                    require(utilitiesOwned > 0);
                     toGameState.players[fromGameState.currentPlayer].balance -=
-                        (roll[0] + roll[1]) *
-                        playerSpace.prices[uint8(playerSpace.status)];
+                        (roll[0] + roll[1]) * (utilitiesOwned > 1 ? 10 : 4);
+                    
+                } else if (playerSpace.spaceType == SpaceType.Railroad) {
+                    uint8 railroadsOwned = getRailroadsOwnedByPlayer(fromGameState, playerSpace.owner);
+                    require(railroadsOwned > 0);
+                    toGameState.players[fromGameState.currentPlayer].balance -= 25 * (2**uint256(railroadsOwned - 1));
                 } else {
                     toGameState.players[fromGameState.currentPlayer]
                         .balance -= playerSpace.prices[uint8(
@@ -862,13 +927,5 @@ contract Monopoly is ForceMoveApp {
                     abi.encode(nonce, sender, channelId)
                 )[offset]
             ) % max;
-    }
-
-    modifier outcomeUnchanged(VariablePart memory a, VariablePart memory b) {
-        require(
-            keccak256(b.outcome) == keccak256(a.outcome),
-            "Monopoly: Outcome must not change"
-        );
-        _;
     }
 }

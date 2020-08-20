@@ -21,11 +21,12 @@ export default {
         };
     },
     computed: {
-        ...mapGetters({ player: "getCurrentPlayer" })
+        ...mapGetters({ player: "getCurrentPlayer", self: "getSelfAddress" })
     },
     methods: {
         action() {
-            this.$store.dispatch("jailPlayer", this.player.username);
+            if(this.self == this.player.id)
+                this.$store.dispatch("jailPlayer");
         },
         async popup() {
             await this.$swal({

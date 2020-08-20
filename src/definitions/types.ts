@@ -116,6 +116,7 @@ export interface MonopolyState {
     channelId: Bytes32;
     nonce: Uint256;
     currentPlayer: Uint256;
+    taxes: Uint256;
     houses: number;
     hotels: number;
     players: Player[];

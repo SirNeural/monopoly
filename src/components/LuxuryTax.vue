@@ -9,6 +9,7 @@
 </template>
 
 <script>
+import { mapGetters } from 'vuex';
 export default {
     data() {
         return {
@@ -17,8 +18,13 @@ export default {
             active: false
         };
     },
+    computed: {
+        ...mapGetters({
+            self: "getSelfAddress",
+            player: "getCurrentPlayer",
+        })
+    },
     methods: {
-        action() {},
         async popup() {
             await this.$swal({
                 title: this.name,
@@ -26,7 +32,8 @@ export default {
                 className: 'normal-case',
                 icon: 'warning'
             });
-            this.action();
+            if(this.self == this.player.id)
+                this.store.dispatch("luxuryTax");
         }
     }
 };

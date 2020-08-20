@@ -14,6 +14,7 @@ function toMonopolyData (appData: AppData): MonopolyData {
             channelId: randomChannelId(),
             nonce: bigNumberify(0),
             currentPlayer: bigNumberify(0),
+            taxes: bigNumberify(0),
             houses: 32,
             hotels: 12,
             players: [],
@@ -34,6 +35,7 @@ export function monopolyDataFactory (players: MonopolyParticipant[]): MonopolyDa
             channelId: randomChannelId(),
             nonce: bigNumberify(0),
             currentPlayer: bigNumberify(0),
+            taxes: bigNumberify(0),
             houses: 32,
             hotels: 12,
             players: players.map(player => ({ name: player.username ?? player.signingAddress, avatar: player.avatar ?? 'pig', id: player.signingAddress, bankrupt: false, balance: 1500, jailed: 0, doublesRolled: 0, position: 0, getOutOfJailFreeCards: 0 })),
@@ -145,7 +147,7 @@ export function encodeMonopolyData (monopolyData: MonopolyData): string {
     );
     const encodedMonopolyState = { ...monopolyData.state, playersBytes: playersBytes, spacesBytes: spacesBytes, chanceBytes: chanceBytes, communityChestBytes: communityChestBytes };
     const appStateBytes = defaultAbiCoder.encode(
-        ['tuple(bytes32 channelId, uint256 nonce, uint256 currentPlayer, uint8 houses, uint8 hotels, bytes playersBytes, bytes spacesBytes, bytes chanceBytes, bytes communityChestBytes)'],
+        ['tuple(bytes32 channelId, uint256 nonce, uint256 currentPlayer, uint256 taxes, uint8 houses, uint8 hotels, bytes playersBytes, bytes spacesBytes, bytes chanceBytes, bytes communityChestBytes)'],
         [encodedMonopolyState]
     );
     const appTurnBytes = defaultAbiCoder.encode(
@@ -172,7 +174,7 @@ export function decodeAppData (appDataBytes: string): AppData {
     //const stake = parameters.stake.toString();
     const positionType = parameters.positionType as PositionType;
     const monopolyState = defaultAbiCoder.decode(
-        ['tuple(bytes32 channelId, uint256 nonce, uint256 currentPlayer, uint8 houses, uint8 hotels, bytes playersBytes, bytes spacesBytes, bytes chanceBytes, bytes communityChestBytes)'],
+        ['tuple(bytes32 channelId, uint256 nonce, uint256 currentPlayer, uint256 taxes, uint8 houses, uint8 hotels, bytes playersBytes, bytes spacesBytes, bytes chanceBytes, bytes communityChestBytes)'],
         parameters.appStateBytes
     )[0];
     const players = defaultAbiCoder.decode(
@@ -236,6 +238,7 @@ export function decodeAppData (appDataBytes: string): AppData {
             channelId: monopolyState.channelId,
             nonce: monopolyState.nonce,
             currentPlayer: monopolyState.currentPlayer,
+            taxes: monopolyState.taxes,
             houses: monopolyState.houses,
             hotels: monopolyState.hotels,
             players: players,

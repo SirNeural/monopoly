@@ -87,6 +87,7 @@ export default {
   },
   computed: {
     ...mapGetters({
+      self: "getSelfAddress",
       player: "getCurrentPlayer",
       card: "getCommunityChest"
     })
@@ -181,7 +182,8 @@ export default {
         ),
         className: "normal-case"
       });
-      this.$store.dispatch('drawCard', {address: this.player.id, type: 'communityChest'});
+      if(this.self == this.player.id)
+        this.$store.dispatch('drawCard', {address: this.player.id, type: 'communityChest'});
     }
   }
 };

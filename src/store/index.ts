@@ -2,7 +2,7 @@ import Vue from "vue";
 import Vuex from "vuex";
 import orderBy from "lodash.orderby";
 import groupBy from "lodash.groupby";
-import { PositionType, PropertyStatus, ActionType } from '../definitions/types';
+import { PositionType, PropertyStatus, ActionType, SpaceType } from '../definitions/types';
 import { loadSpaces, loadCards, rand } from '../definitions/Monopoly'
 import {
   randomChannelId
@@ -10,6 +10,7 @@ import {
 import {
   bigNumberify
 } from 'ethers/utils';
+import { AddressZero, HashZero } from 'ethers/constants';
 import { spaces, properties } from './properties.json';
 import { chance, communityChest } from './cards.json';
 
@@ -46,8 +47,8 @@ const state = {
 const credit = (player, amount) => {
   Vue.set(player, "balance", bigNumberify(player.balance).add(amount));
 };
-const debit = (player, amount) => {
-  if (bigNumberify(player.balance).gte(amount)) {
+const debit = (player, amount, force = false) => {
+  if (bigNumberify(player.balance).gte(amount) || force) {
     Vue.set(player, "balance", bigNumberify(player.balance).sub(amount));
     return true;
   } else {
@@ -58,7 +59,7 @@ const debit = (player, amount) => {
 const mutations = {
   SET_STATE: (state, newState) => {
     Vue.set(state, "positionType", newState.positionType);
-    state.turns = newState.turns;
+    // state.turns = newState.turns;
     state.state = newState.state;
   },
   NEXT_STATE: (state) => {
@@ -133,6 +134,70 @@ const mutations = {
       Vue.set(property, "owner", player.id);
       Vue.set(property, "status", PropertyStatus.Owned);
       state.currentTurn.purchased.push(property.id);
+    }
+  },
+  RENT_PROPERTY: (state, {
+    propertyName,
+    address
+  }) => {
+    const player = state.state.players.find(player => player.id == address) || {};
+    const property = state.state.spaces.find(property => property.name == propertyName) || {};
+    const propertyOwner = state.state.players.find(player => player.id == property.owner);
+
+    if (
+      property.status != PropertyStatus.Unowned &&
+      property.status != PropertyStatus.Mortgaged &&
+      property.owner != player.id
+    ) {
+      debit(player, property.prices[property.status], true)
+      credit(propertyOwner, property.prices[property.status]);
+    }
+  },
+  RENT_RAILROAD: (state, {
+    propertyName,
+    address
+  }) => {
+    const player = state.state.players.find(player => player.id == address) || {};
+    const property = state.state.spaces.find(property => property.name == propertyName) || {};
+    const propertyOwner = state.state.players.find(player => player.id == property.owner);
+    const utilities = state.state.spaces.find(property => property.spaceType == SpaceType.Railroad);
+    const railroadsOwned = utilities.filter(utility => utility.owner == property.owner).length;
+
+    if (
+      property.status != PropertyStatus.Unowned &&
+      property.status != PropertyStatus.Mortgaged &&
+      property.owner != player.id &&
+      railroadsOwned > 0
+    ) {
+      debit(player, property.prices[25 * (Math.pow(2, railroadsOwned) - 1)], true)
+      credit(propertyOwner, property.prices[25 * (Math.pow(2, railroadsOwned) - 1)]);
+    }
+  },
+  RENT_UTILITY: (state, {
+    propertyName,
+    address
+  }) => {
+    const player = state.state.players.find(player => player.id == address) || {};
+    const property = state.state.spaces.find(property => property.name == propertyName) || {};
+    const utilities = state.state.spaces.find(property => property.spaceType == SpaceType.Utility);
+    const propertyOwner = state.state.players.find(player => player.id == property.owner);
+    const utilitiesOwned = utilities.filter(utility => utility.owner == property.owner).length;
+    const diceRoll = [0, 1].map(i => rand(state.state.nonce, state.state.players[state.state.currentPlayer.toNumber()].id, state.state.channelId, i, 6) + 1).reduce((a, b) => a + b, 0);
+
+    if (
+      property.status != PropertyStatus.Unowned &&
+      property.status != PropertyStatus.Mortgaged &&
+      property.owner != player.id &&
+      utilitiesOwned > 0
+    ) {
+      let multiplier;
+      if (utilitiesOwned > 1) {
+        multiplier = 10;
+      } else {
+        multiplier = 4;
+      }
+      debit(player, multiplier * diceRoll, true)
+      credit(propertyOwner, multiplier * diceRoll);
     }
   },
   MORTGAGE_PROPERTY: (state, {
@@ -264,6 +329,28 @@ const mutations = {
     Vue.set(state.self, "username", username);
     Vue.set(state.self, "address", address);
   },
+  JAIL_PLAYER: (state) => {
+    const player = state.state.players[state.state.currentPlayer.toNumber()];
+    Vue.set(player, "position", 10);
+    Vue.set(player, "jailed", 1);
+  },
+  INCOME_TAX: (state) => {
+    const player = state.state.players[state.state.currentPlayer.toNumber()];
+    debit(player, 200, true)
+    state.state.taxes.add(200);
+  },
+  LUXURY_TAX: (state) => {
+    const player = state.state.players[state.state.currentPlayer.toNumber()];
+    debit(player, 75, true)
+      Vue.set(player, "balance", player.balance.toNumber - 75);
+    state.state.taxes.add(75);
+  },
+  FREE_PARKING: (state) => {
+    const player = state.state.players[state.state.currentPlayer.toNumber()];
+    const taxes = state.state.taxes;
+    state.state.taxes = 0;
+    credit(player, taxes);
+  }
 };
 
 const actions = {
@@ -297,6 +384,33 @@ const actions = {
     address
   }) => {
     context.commit("BUY_PROPERTY", {
+      propertyName: propertyName,
+      address: address
+    });
+  },
+  rentProperty: (context, {
+    propertyName,
+    address
+  }) => {
+    context.commit("RENT_PROPERTY", {
+      propertyName: propertyName,
+      address: address
+    });
+  },
+  rentRailroad: (context, {
+    propertyName,
+    address
+  }) => {
+    context.commit("RENT_RAILROAD", {
+      propertyName: propertyName,
+      address: address
+    });
+  },
+  rentUtility: (context, {
+    propertyName,
+    address
+  }) => {
+    context.commit("RENT_UTILITY", {
       propertyName: propertyName,
       address: address
     });
@@ -336,7 +450,19 @@ const actions = {
   },
   setSelf: (context, { username, address }) => {
     context.commit("SET_SELF", { username: username, address: address});
-  }
+  },
+  jailPlayer: (context) => {
+    context.commit("JAIL_PLAYER");
+  },
+  incomeTax: (context) => {
+    context.commit("INCOME_TAX");
+  },
+  luxuryTax: (context) => {
+    context.commit("LUXURY_TAX");
+  },
+  freeParking: (context) => {
+    context.commit("FREE_PARKING");
+  },
 };
 
 const getters = {
@@ -346,6 +472,9 @@ const getters = {
       state: state.state,
       turns: state.turns.concat([state.currentTurn]),
     }
+  },
+  getTax: state => {
+    return state.state.taxes.toNumber();
   },
   getSpaces: state => {
     return state.state.spaces || false; // mapstate
@@ -388,7 +517,9 @@ const getters = {
       });
   },
   getPropertyOwner: state => property => {
-    return state.state.spaces.find(space => space.name == property).owner;
+    const owner = state.state.spaces.find(space => space.name == property).owner;
+    if (owner != AddressZero) return owner
+    else return false
   },
   getPlayer: state => address => {
     return state.state.players.find(player => player.id == address) || false;

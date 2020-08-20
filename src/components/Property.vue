@@ -23,16 +23,17 @@ export default {
       return this.getProperty(this.name);
     },
     ...mapGetters({
+      self: "getSelfAddress",
       player: "getCurrentPlayer",
       getProperty: "getProperty",
       monopolies: "getCurrentPlayerMonopolies",
       propertyOwner: "getPropertyOwner"
     }),
     owner() {
-      return this.propertyOwner(this.name) == this.player.id;
+        return this.propertyOwner(this.name);
     },
-    isMonopoly() {
-      return this.monopolies[this.property.color];
+    isCurrentPlayer() {
+        return this.player.id == this.self;
     }
   },
   props: {
@@ -98,23 +99,40 @@ export default {
                             </div>`),
         className: "normal-case",
         buttons: {
-          cancel: this.owner ? "Manage" : "Auction",
-          [this.owner ? "rent" : "buy"]: true
+          cancel: true,
+          [this.owner ? (this.isCurrentPlayer ? 'manage' : 'rent') : 'buy']: true
         }
       });
-      if (buy) {
-        this.$store.dispatch("buyProperty", {
-          propertyName: this.name,
-          address: this.player.id
-        });
-        this.$swal({
-          title: "Congratulations!",
-          text: `You now own ${this.name}!`,
-          icon: "success",
-          className: "normal-case"
-        });
+      if (!this.owner && this.isCurrentPlayer && buy) {
+          this.$store.dispatch("buyProperty", {
+              propertyName: this.name,
+              address: this.player.id
+          });
+          this.$swal({
+              title: "Congratulations!",
+              text: `You now own ${this.name}!`,
+              icon: "success",
+              className: "normal-case"
+          });
+      } else if (this.isCurrentPlayer && this.owner){
+          if(this.owner == this.self) {
+              // house management
+          } else {
+              this.$swal({
+                title: "Rent Paid!",
+                text: `You have paid the rent due on ${this.name}!`,
+                icon: "success",
+                className: "normal-case"
+              });
+              this.$store.dispatch("rentProperty", {propertyName: this.name, address: this.player.id});
+          }
       } else {
-        //auction
+          this.$swal({
+              title: "Sorry!",
+              text: `There was a problem purchasing ${this.name}!`,
+              icon: "error",
+              className: "normal-case"
+          });
       }
     }
   }

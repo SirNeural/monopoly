@@ -20,21 +20,20 @@ export default {
             price: 150,
             mortgage: 75,
             name: 'Electric Company',
-            color: 'yellow-600',
+            color: 'yellow-200',
             active: false,
             owner: false
         };
     },
     computed: {
-        ...mapGetters(['getLastRoll']),
-        rent() {
-            return this.getLastRoll * 4;
-        }
+        ...mapGetters({
+        self: "getSelfAddress",
+        player: "getCurrentPlayer"
+        })
     },
     methods: {
-        action() {},
         async popup() {
-            await this.$swal({
+            const buy = await this.$swal({
                 content: this.$strToHtml(`
                 <div class="flex flex-row justify-center p-4"><i class="far fa-lightbulb fa-5x text-${
                     this.color
@@ -58,11 +57,41 @@ export default {
                             </div>`),
                 className: 'normal-case',
                 buttons: {
-                    cancel: this.owner ? 'Manage' : 'Auction',
-                    [this.owner ? 'rent' : 'buy']: true
+                    cancel: true,
+                    [this.owner ? (this.isCurrentPlayer ? 'manage' : 'rent') : 'buy']: true
                 }
             });
-            this.action();
+            if (!this.owner && this.isCurrentPlayer && buy) {
+                this.$store.dispatch("buyProperty", {
+                    propertyName: this.name,
+                    address: this.player.id
+                });
+                this.$swal({
+                    title: "Congratulations!",
+                    text: `You now own ${this.name}!`,
+                    icon: "success",
+                    className: "normal-case"
+                });
+            } else if (this.isCurrentPlayer && this.owner){
+                if(this.owner == this.self) {
+                    // house management
+                } else {
+                    this.$swal({
+                        title: "Rent Paid!",
+                        text: `You have paid the rent due on ${this.name}!`,
+                        icon: "success",
+                        className: "normal-case"
+                    });
+                    this.$store.dispatch("rentUtility", {propertyName: this.name, address: this.player.id});
+                }
+            } else {
+                this.$swal({
+                    title: "Sorry!",
+                    text: `There was a problem purchasing ${this.name}!`,
+                    icon: "error",
+                    className: "normal-case"
+                });
+            }
         }
     }
 };

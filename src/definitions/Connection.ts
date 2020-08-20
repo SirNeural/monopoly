@@ -75,7 +75,7 @@ export class Connection {
         this.client.onMessageQueued((message) => {
             console.log('sending data');
             console.log(message);
-            this.sendData({ type: "message", data: message });
+            this.sendData({ type: "message", data: JSON.stringify(message) });
         });
         this.client.onChannelUpdated((channelState: ChannelState<AppData>) => {
             console.log('received channel update');
@@ -174,16 +174,18 @@ export class Connection {
             case 'setAvatar':
                 this.participants.set(conn.peer, { ...this.participants.get(conn.peer), avatar: data.data });
                 break;
-            case 'message':
-                if (data.data.recipient == this.provider.signingAddress) {
+            case 'message': {
+                const message = JSON.parse(data.data);
+                if (message.recipient == this.provider.signingAddress) {
                     console.log('sending wallet message');
-                    console.log(data.data);
-                    await this.client.pushMessage(data.data);
+                    console.log(message);
+                    await this.client.pushMessage(message);
                 } else {
-                    console.log('found message for other user ' + data.data.recipient)
+                    console.log('found message for other user ' + message.recipient)
                     console.log('our id is' + this.provider.signingAddress)
                 }
                 break;
+            }
         }
     }
 
