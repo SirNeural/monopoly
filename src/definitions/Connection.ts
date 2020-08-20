@@ -83,6 +83,10 @@ export class Connection {
             this.state = channelState;
             this.store.dispatch('setState', channelState.appData);
             stateCallback(channelState.appData)
+            switch (channelState.status) {
+                case 'proposed':
+                    this.client.joinChannel(channelState.channelId);
+            }
             // save to vuex
         });
         console.log('adding self to vuex')
@@ -130,19 +134,26 @@ export class Connection {
         console.log(this.state);
     }
 
-    async applyChange (transition: string, turn: Turn) {
-        //await this.contract[transition](state, turn);
-        const provisionalState = {
-            ...this.state,
-            appData: {
-                ...this.state.appData,
-                ...this.store.getters.state
-            }
-        }
+    async updateChannel () {
+        const provisionalState = this.store.getters.getState;
+        console.log('updating channel')
+        console.log(provisionalState);
         this.state = await this.client.updateChannel(this.state.channelId, this.state.allocations, provisionalState);
-        this.store.dispatch('setState', this.state.appData);
-        // save to vuex
     }
+
+    // async applyChange (transition: string, turn: Turn) {
+    //     //await this.contract[transition](state, turn);
+    //     const provisionalState = {
+    //         ...this.state,
+    //         appData: {
+    //             ...this.state.appData,
+    //             ...this.store.getters.state
+    //         }
+    //     }
+    //     this.state = await this.client.updateChannel(this.state.channelId, this.state.allocations, provisionalState);
+    //     this.store.dispatch('setState', this.state.appData);
+    //     // save to vuex
+    // }
 
     public joinRoom (roomId: string) {
         if (!this.participants.has(roomId)) {

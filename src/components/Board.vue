@@ -38,7 +38,7 @@
         </button>
         <button
           class="p-2 select-none text-xl text-white"
-          @click="nextState()"
+          @click="nextState"
         >
           Next State
         </button>
@@ -59,12 +59,12 @@
       <div class="text-lg text-white normal-case">
         <div
           v-hide="
-            this.state.positionType == 0 || this.state.positionType == 5 ||
+            state.positionType == 0 || state.positionType == 5 ||
               !dice.every((dice) => dice.isFinished())
           "
         >
           Last Roll:
-          {{ this.lastRoll.join(", ") }}
+          {{ lastRoll.join(", ") }}
         </div>
       </div>
     </div>
@@ -423,6 +423,7 @@ export default {
     },
     async nextState() {
       this.$store.dispatch('nextState');
+      await this.connection.updateChannel();
       this.setState(this.state);
     },
     async setState(state) {

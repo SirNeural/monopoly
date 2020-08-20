@@ -59,8 +59,8 @@ const debit = (player, amount, force = false) => {
 const mutations = {
   SET_STATE: (state, newState) => {
     Vue.set(state, "positionType", newState.positionType);
-    // state.turns = newState.turns;
-    state.state = newState.state;
+    Vue.set(state, "turns", newState.turns);
+    Vue.set(state, "state", newState.state);
   },
   NEXT_STATE: (state) => {
     switch (state.positionType) {
