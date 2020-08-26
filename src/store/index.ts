@@ -21,11 +21,12 @@ const state = {
     username: '',
     address: '',
   },
-  positionType: PositionType.Start,
   state: {
     channelId: randomChannelId(),
     nonce: bigNumberify(0),
     currentPlayer: bigNumberify(0),
+    taxes: bigNumberify(0),
+    positionType: PositionType.Start,
     houses: 32,
     hotels: 12,
     players: [],
@@ -58,50 +59,50 @@ const debit = (player, amount, force = false) => {
 
 const mutations = {
   SET_STATE: (state, newState) => {
-    Vue.set(state, "positionType", newState.positionType);
-    Vue.set(state, "turns", newState.turns);
-    Vue.set(state, "state", newState.state);
+    state.turns = newState.turns;
+    state.state = newState.state;
   },
   NEXT_STATE: (state) => {
-    switch (state.positionType) {
+    switch (state.state.positionType) {
       case PositionType.Start:
-        state.positionType = PositionType.Rolling;
+        state.state.positionType = PositionType.Rolling;
         // rolling
         break;
       case PositionType.Rolling:
         if (state.state.players[state.state.currentPlayer.toNumber()].jailed == 0) {
-          state.positionType = PositionType.Moving;
+          state.state.positionType = PositionType.Moving;
         } else {
-          state.positionType = PositionType.NextPlayer;
+          state.state.positionType = PositionType.NextPlayer;
         }
         break;
       case PositionType.Moving:
-        state.positionType = PositionType.Action;
+        state.state.positionType = PositionType.Action;
         break;
       case PositionType.Action:
-        if (rand(state.state.nonce, state.state.players[state.state.currentPlayer].id, state.state.channelId, 0, 6) == rand(state.state.nonce, state.state.players[state.state.currentPlayer].id, state.state.channelId, 1, 6)) {
-          // rolled doubles
-          state.positionType = PositionType.Rolling;
+        if (rand(state.state.nonce.toNumber(), state.state.players[state.state.currentPlayer].id, state.state.channelId, 0, 6) == rand(state.state.nonce.toNumber(), state.state.players[state.state.currentPlayer].id, state.state.channelId, 1, 6)) {
+          console.log('action to rolling #1: ' + rand(state.state.nonce.toNumber(), state.state.players[state.state.currentPlayer].id, state.state.channelId, 0, 6))
+          console.log('action to rolling #2: ' + rand(state.state.nonce.toNumber(), state.state.players[state.state.currentPlayer].id, state.state.channelId, 1, 6))
+          state.state.positionType = PositionType.Rolling;
         } else {
-          state.positionType = PositionType.Maintenance;
+          state.state.positionType = PositionType.Maintenance;
         }
         break;
       case PositionType.Maintenance:
         if (state.state.players[state.state.currentPlayer.toNumber()].balance < 0) {
           //bankrupt
-          state.positionType = PositionType.Bankrupt;
+          state.state.positionType = PositionType.Bankrupt;
         } else {
-          state.positionType = PositionType.NextPlayer;
+          state.state.positionType = PositionType.NextPlayer;
         }
         break;
       case PositionType.NextPlayer:
-        state.positionType = PositionType.Rolling;
+        state.state.positionType = PositionType.Rolling;
         break;
       case PositionType.Bankrupt:
         if (state.state.players.filter(player => !player.bankrupt).length <= 1) {
-          state.positionType = PositionType.End;
+          state.state.positionType = PositionType.End;
         } else {
-          state.positionType = PositionType.NextPlayer;
+          state.state.positionType = PositionType.NextPlayer;
         }
         break;
       case PositionType.End:
@@ -182,7 +183,7 @@ const mutations = {
     const utilities = state.state.spaces.find(property => property.spaceType == SpaceType.Utility);
     const propertyOwner = state.state.players.find(player => player.id == property.owner);
     const utilitiesOwned = utilities.filter(utility => utility.owner == property.owner).length;
-    const diceRoll = [0, 1].map(i => rand(state.state.nonce, state.state.players[state.state.currentPlayer.toNumber()].id, state.state.channelId, i, 6) + 1).reduce((a, b) => a + b, 0);
+    const diceRoll = [0, 1].map(i => rand(state.state.nonce.toNumber(), state.state.players[state.state.currentPlayer.toNumber()].id, state.state.channelId, i, 6) + 1).reduce((a, b) => a + b, 0);
 
     if (
       property.status != PropertyStatus.Unowned &&
@@ -230,7 +231,7 @@ const mutations = {
   },
   DRAW_CARD: (state, {address, type}) => {
     const player = state.state.players.find(player => player.id == address) || {};
-    const card = state.state[type][rand(state.state.nonce, player.id, state.state.channelId, 2, state.state[type].length)];
+    const card = state.state[type][rand(state.state.nonce.toNumber(), player.id, state.state.channelId, 2, state.state[type].length)];
     switch (card.action) {
       case ActionType.PayMoney:
         debit(player, card.amount);
@@ -304,8 +305,8 @@ const mutations = {
   ROLL_DICE: (state, address) => {
     const player = state.state.players.find(player => player.id == address) || {};
     const roll = [
-      rand(state.state.nonce, player.id, state.state.channelId, 0, 6) + 1,
-      rand(state.state.nonce, player.id, state.state.channelId, 1, 6) + 1
+      rand(state.state.nonce.toNumber(), player.id, state.state.channelId, 0, 6) + 1,
+      rand(state.state.nonce.toNumber(), player.id, state.state.channelId, 1, 6) + 1
     ];
     const spaces = roll.reduce((total, num) => {
       return total + num;
@@ -316,7 +317,7 @@ const mutations = {
     Vue.set(player, "position", player.position + spaces);
   },
   NEXT_NONCE: (state) => {
-    state.state.nonce++;
+    Vue.set(state.state, "nonce", state.state.nonce.add(1));
   },
   NEXT_PLAYER: (state) => {
     let nextPlayer = (state.state.currentPlayer.toNumber() + 1) % state.state.players.length;
@@ -434,6 +435,7 @@ const actions = {
     });
   },
   rollDice: (context, address) => {
+    context.commit("NEXT_NONCE");
     context.commit("ROLL_DICE", address);
   },
   drawCard: (context, { address, type }) => {
@@ -468,7 +470,6 @@ const actions = {
 const getters = {
   getState: state => {
     return {
-      positionType: state.positionType,
       state: state.state,
       turns: state.turns.concat([state.currentTurn]),
     }
@@ -550,13 +551,13 @@ const getters = {
     return state.state.spaces[state.state.players[state.state.players.findIndex(player => player.id == address)].position];
   },
   getCommunityChest: state => {
-    return state.state.communityChest[rand(state.state.nonce, state.state.players[state.state.currentPlayer.toNumber()].id, state.state.channelId, 2, state.state.communityChest.length)];
+    return state.state.communityChest[rand(state.state.nonce.toNumber(), state.state.players[state.state.currentPlayer.toNumber()].id, state.state.channelId, 2, state.state.communityChest.length)];
   },
   getChance: state => {
-    return state.state.communityChest[rand(state.state.nonce, state.state.players[state.state.currentPlayer.toNumber()].id, state.state.channelId, 2, state.state.chance.length)];
+    return state.state.communityChest[rand(state.state.nonce.toNumber(), state.state.players[state.state.currentPlayer.toNumber()].id, state.state.channelId, 2, state.state.chance.length)];
   },
   getDiceRoll: state => {
-    return state.state.players.length > 0 ? [0, 1].map(i => rand(state.state.nonce, state.state.players[state.state.currentPlayer.toNumber()].id, state.state.channelId, i, 6) + 1) : [];
+    return state.state.players.length > 0 ? [0, 1].map(i => rand(state.state.nonce.toNumber(), state.state.players[state.state.currentPlayer.toNumber()].id, state.state.channelId, i, 6) + 1) : [];
   },
   getSelfUsername: state => {
     return state.self.username;

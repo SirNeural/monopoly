@@ -10,12 +10,13 @@
 
 <script>
 import { mapGetters } from "vuex";
-import { PropertyStatus } from '../definitions/types'
+import { PropertyStatus } from "../definitions/types";
 export default {
+  inject: ["connection"],
   data() {
     return {
       houses: 0,
-      active: false
+      active: false,
     };
   },
   computed: {
@@ -27,17 +28,17 @@ export default {
       player: "getCurrentPlayer",
       getProperty: "getProperty",
       monopolies: "getCurrentPlayerMonopolies",
-      propertyOwner: "getPropertyOwner"
+      propertyOwner: "getPropertyOwner",
     }),
     owner() {
-        return this.propertyOwner(this.name);
+      return this.propertyOwner(this.name);
     },
     isCurrentPlayer() {
-        return this.player.id == this.self;
-    }
+      return this.player.id == this.self;
+    },
   },
   props: {
-    name: String
+    name: String,
   },
   methods: {
     onActive() {},
@@ -52,7 +53,11 @@ export default {
                             <div>
                             Rent:
                             </div>
-                            <div>$${this.property.status == PropertyStatus.Monopoly ? this.property.prices[2] : this.property.prices[1]}</div>
+                            <div>$${
+                              this.property.status == PropertyStatus.Monopoly
+                                ? this.property.prices[2]
+                                : this.property.prices[1]
+                            }</div>
                             </div>
                             <div class="flex flex-row justify-between py-1">
                             <div>
@@ -100,41 +105,48 @@ export default {
         className: "normal-case",
         buttons: {
           cancel: true,
-          [this.owner ? (this.isCurrentPlayer ? 'manage' : 'rent') : 'buy']: true
-        }
+          [this.owner
+            ? this.isCurrentPlayer
+              ? "manage"
+              : "rent"
+            : "buy"]: true,
+        },
       });
       if (!this.owner && this.isCurrentPlayer && buy) {
-          this.$store.dispatch("buyProperty", {
-              propertyName: this.name,
-              address: this.player.id
-          });
+        this.$store.dispatch("buyProperty", {
+          propertyName: this.name,
+          address: this.player.id,
+        });
+        this.$swal({
+          title: "Congratulations!",
+          text: `You now own ${this.name}!`,
+          icon: "success",
+          className: "normal-case",
+        });
+      } else if (this.isCurrentPlayer && this.owner) {
+        if (this.owner == this.self) {
+          // house management
+        } else {
           this.$swal({
-              title: "Congratulations!",
-              text: `You now own ${this.name}!`,
-              icon: "success",
-              className: "normal-case"
+            title: "Rent Paid!",
+            text: `You have paid the rent due on ${this.name}!`,
+            icon: "success",
+            className: "normal-case",
           });
-      } else if (this.isCurrentPlayer && this.owner){
-          if(this.owner == this.self) {
-              // house management
-          } else {
-              this.$swal({
-                title: "Rent Paid!",
-                text: `You have paid the rent due on ${this.name}!`,
-                icon: "success",
-                className: "normal-case"
-              });
-              this.$store.dispatch("rentProperty", {propertyName: this.name, address: this.player.id});
-          }
+          this.$store.dispatch("rentProperty", {
+            propertyName: this.name,
+            address: this.player.id,
+          });
+        }
       } else {
-          this.$swal({
-              title: "Sorry!",
-              text: `There was a problem purchasing ${this.name}!`,
-              icon: "error",
-              className: "normal-case"
-          });
+        this.$swal({
+          title: "Sorry!",
+          text: `There was a problem purchasing ${this.name}!`,
+          icon: "error",
+          className: "normal-case",
+        });
       }
-    }
-  }
+    },
+  },
 };
 </script>

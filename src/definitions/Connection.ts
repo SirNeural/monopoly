@@ -14,13 +14,14 @@ export class Connection {
     public id;
     private provider;
     private client;
-    private contract;
+    // private contract;
     private participants;
     private self;
     private name;
     private state;
     private store;
     private avatar;
+    private stateCallback;
 
     constructor(name: string, provider, store, stateCallback, host: boolean = false) {
         this.id = niceware.generatePassphrase(8).join('-').toLowerCase();
@@ -66,10 +67,11 @@ export class Connection {
             });
         });
         this.provider = provider;
-        this.setChannelClient(stateCallback);
+        this.stateCallback = stateCallback;
+        this.setChannelClient();
     }
 
-    setChannelClient (stateCallback) {
+    setChannelClient () {
         console.log('creating channel client');
         this.client = new MonopolyClient(new ChannelClient(this.provider));
         this.client.onMessageQueued((message) => {
@@ -82,7 +84,7 @@ export class Connection {
             console.log(channelState);
             this.state = channelState;
             this.store.dispatch('setState', channelState.appData);
-            stateCallback(channelState.appData)
+            this.stateCallback()
             switch (channelState.status) {
                 case 'proposed':
                     this.client.joinChannel(channelState.channelId);
@@ -132,6 +134,16 @@ export class Connection {
         this.store.dispatch('setState', this.state.appData);
         // save to vuex
         console.log(this.state);
+    }
+
+    syncVuex (action, payload = {}) {
+        this.sendData({
+            type: "state",
+            data: {
+                action: action,
+                payload: JSON.stringify(payload)
+            }
+        });
     }
 
     async updateChannel () {
@@ -197,6 +209,10 @@ export class Connection {
                 }
                 break;
             }
+            case 'state': 
+                this.store.dispatch(data.data.action, JSON.parse(data.data.payload))
+                this.stateCallback();
+                break;
         }
     }
 

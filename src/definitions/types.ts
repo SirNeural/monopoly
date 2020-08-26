@@ -117,6 +117,7 @@ export interface MonopolyState {
     nonce: Uint256;
     currentPlayer: Uint256;
     taxes: Uint256;
+    positionType: PositionType;
     houses: number;
     hotels: number;
     players: Player[];
@@ -126,7 +127,6 @@ export interface MonopolyState {
 }
 
 export interface MonopolyData {
-    positionType: PositionType;
     state: MonopolyState;
     turns: Turn[];
 }

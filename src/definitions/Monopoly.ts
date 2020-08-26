@@ -9,12 +9,12 @@ import { chance, communityChest } from '../store/cards.json';
 
 function toMonopolyData (appData: AppData): MonopolyData {
     const defaults: MonopolyData = {
-        positionType: appData.type,
         state: {
             channelId: randomChannelId(),
             nonce: bigNumberify(0),
             currentPlayer: bigNumberify(0),
             taxes: bigNumberify(0),
+            positionType: appData.type,
             houses: 32,
             hotels: 12,
             players: [],
@@ -30,12 +30,12 @@ function toMonopolyData (appData: AppData): MonopolyData {
 
 export function monopolyDataFactory (players: MonopolyParticipant[]): MonopolyData {
     return {
-        positionType: PositionType.Start,
         state: {
             channelId: randomChannelId(),
             nonce: bigNumberify(0),
             currentPlayer: bigNumberify(0),
             taxes: bigNumberify(0),
+            positionType: PositionType.Start,
             houses: 32,
             hotels: 12,
             players: players.map(player => ({ name: player.username ?? player.signingAddress, avatar: player.avatar ?? 'pig', id: player.signingAddress, bankrupt: false, balance: 1500, jailed: 0, doublesRolled: 0, position: 0, getOutOfJailFreeCards: 0 })),
@@ -147,7 +147,7 @@ export function encodeMonopolyData (monopolyData: MonopolyData): string {
     );
     const encodedMonopolyState = { ...monopolyData.state, playersBytes: playersBytes, spacesBytes: spacesBytes, chanceBytes: chanceBytes, communityChestBytes: communityChestBytes };
     const appStateBytes = defaultAbiCoder.encode(
-        ['tuple(bytes32 channelId, uint256 nonce, uint256 currentPlayer, uint256 taxes, uint8 houses, uint8 hotels, bytes playersBytes, bytes spacesBytes, bytes chanceBytes, bytes communityChestBytes)'],
+        ['tuple(bytes32 channelId, uint256 nonce, uint256 currentPlayer, uint256 taxes, uint8 positionType, uint8 houses, uint8 hotels, bytes playersBytes, bytes spacesBytes, bytes chanceBytes, bytes communityChestBytes)'],
         [encodedMonopolyState]
     );
     const appTurnBytes = defaultAbiCoder.encode(
@@ -157,7 +157,7 @@ export function encodeMonopolyData (monopolyData: MonopolyData): string {
     const encodedMonopolyData = { ...monopolyData, appStateBytes: appStateBytes, appTurnBytes: appTurnBytes };
     return defaultAbiCoder.encode(
         [
-            'tuple(uint8 positionType, bytes appStateBytes, bytes appTurnBytes)',
+            'tuple(bytes appStateBytes, bytes appTurnBytes)',
         ],
         [encodedMonopolyData]
     );
@@ -166,15 +166,12 @@ export function encodeMonopolyData (monopolyData: MonopolyData): string {
 export function decodeAppData (appDataBytes: string): AppData {
     const parameters = defaultAbiCoder.decode(
         [
-            'tuple(uint8 positionType, bytes appStateBytes, bytes appTurnBytes)',
+            'tuple(bytes appStateBytes, bytes appTurnBytes)',
         ],
         appDataBytes
     )[0];
-
-    //const stake = parameters.stake.toString();
-    const positionType = parameters.positionType as PositionType;
     const monopolyState = defaultAbiCoder.decode(
-        ['tuple(bytes32 channelId, uint256 nonce, uint256 currentPlayer, uint256 taxes, uint8 houses, uint8 hotels, bytes playersBytes, bytes spacesBytes, bytes chanceBytes, bytes communityChestBytes)'],
+        ['tuple(bytes32 channelId, uint256 nonce, uint256 currentPlayer, uint256 taxes, uint8 positionType, uint8 houses, uint8 hotels, bytes playersBytes, bytes spacesBytes, bytes chanceBytes, bytes communityChestBytes)'],
         parameters.appStateBytes
     )[0];
     const players = defaultAbiCoder.decode(
@@ -233,12 +230,12 @@ export function decodeAppData (appDataBytes: string): AppData {
     }));
 
     return {
-        positionType: positionType,
         state: {
             channelId: monopolyState.channelId,
             nonce: monopolyState.nonce,
             currentPlayer: monopolyState.currentPlayer,
             taxes: monopolyState.taxes,
+            positionType: monopolyState.positionType as PositionType,
             houses: monopolyState.houses,
             hotels: monopolyState.hotels,
             players: players,

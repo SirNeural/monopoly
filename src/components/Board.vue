@@ -18,38 +18,22 @@
       </div>
     </div>
 
-    <div
-      class="flex flex-col flex-wrap min-h-screen justify-around m-8 pb-12"
-      ref="control"
-    >
+    <div class="flex flex-col flex-wrap min-h-screen justify-around m-8 pb-12" ref="control">
       <div class="flex flex-col items-start">
-        <button class="p-2 select-none text-xl text-white" @click="joinRoom">
-          Join Room
-        </button>
-        <button class="p-2 select-none text-xl text-white" @click="createRoom">
-          Create Room
-        </button>
-        <button
-          v-if="host"
-          class="p-2 select-none text-xl text-white"
-          @click="startGame"
-        >
-          Start Game
-        </button>
+        <button class="p-2 select-none text-xl text-white" @click="joinRoom">Join Room</button>
+        <button class="p-2 select-none text-xl text-white" @click="createRoom">Create Room</button>
+        <button v-if="host" class="p-2 select-none text-xl text-white" @click="startGame">Start Game</button>
+        <button class="p-2 select-none text-xl text-white" @click="rotate">Rotate</button>
         <button
           class="p-2 select-none text-xl text-white"
           @click="nextState"
-        >
-          Next State
-        </button>
-        <button class="p-2 select-none text-xl text-white" @click="rotate">
-          Rotate
-        </button>
+          v-if="isCurrentPlayer"
+        >Next State</button>
       </div>
       <div class="flex flex-col items-end">
         <div
           class="flex flex-row normal-case select-none py-2"
-          v-for="player in players"
+          v-for="player in state.players"
           :key="player.name"
         >
           <span class="text-white text-lg">{{ player.name }}:</span>
@@ -57,6 +41,7 @@
         </div>
       </div>
       <div class="text-lg text-white normal-case">
+        <div>{{ positionTypeStr }}</div>
         <div
           v-hide="
             state.positionType == 0 || state.positionType == 5 ||
@@ -75,8 +60,8 @@
 require("@statechannels/iframe-channel-provider");
 import { Connection } from "../definitions/Connection";
 import { PositionType } from "../definitions/types";
-import { mapGetters } from "vuex";
-import TWEEN from '@tweenjs/tween.js';
+import { mapGetters, mapState } from "vuex";
+import TWEEN from "@tweenjs/tween.js";
 import * as THREE from "three";
 import * as CANNON from "cannon";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
@@ -157,13 +142,24 @@ export default {
   props: ["elements"],
   computed: {
     ...mapGetters({
-      state: 'getState',
-      players: 'getPlayers',
-      lastRoll: 'getDiceRoll',
-      currentPlayer: 'getCurrentPlayer',
-      position: 'getCurrentPlayerPosition',
-      username: 'getSelfUsername',
+      self: "getSelfAddress",
+      lastRoll: "getDiceRoll",
+      currentPlayer: "getCurrentPlayer",
+      position: "getCurrentPlayerPosition",
+      username: "getSelfUsername",
     }),
+    ...mapState(["state"]),
+    positionTypeStr() {
+      return PositionType[this.state.positionType];
+    },
+    isCurrentPlayer() {
+      return this.currentPlayer.id == this.self;
+    },
+  },
+  provide() {
+    return {
+      connection: this.connection,
+    };
   },
   watch: {
     // position(value, old) {
@@ -179,7 +175,7 @@ export default {
     angle(value) {
       this.three.controls.rotate(value);
       this.three.controls.update();
-    }
+    },
   },
   methods: {
     rotate() {
@@ -189,6 +185,7 @@ export default {
     },
     rollDice() {
       this.$store.dispatch("rollDice", this.username);
+      // this.connection.syncVuex("rollDice", this.username);
     },
     async setPlayer() {
       if (this.username) {
@@ -212,11 +209,11 @@ export default {
           this.setState.bind(this),
           this.host
         );
-        this.$store.dispatch('setSelf', {
+        this.$store.dispatch("setSelf", {
           username: username,
           address: this.connection.getSigningAddress(),
-        })
-        this.setState(this.state);
+        });
+        this.setState();
         return true;
       }
       return false;
@@ -309,7 +306,7 @@ export default {
       this.three.renderers.webgl.setSize(window.innerWidth, window.innerHeight);
     },
     createAvatar(player) {
-      if(!this.pieces.has(player.id)) {
+      if (!this.pieces.has(player.id)) {
         const animalModelNames = [
           "pig",
           "llama",
@@ -318,14 +315,16 @@ export default {
           "zebra",
           "horse",
         ];
-        const name = animalModelNames.includes(player.avatar) ? player.avatar : "pig";
+        const name = animalModelNames.includes(player.avatar)
+          ? player.avatar
+          : "pig";
         const gameObject = this.three.gameObjectManager.createGameObject(
           this.three.board.outer,
           name,
           this.three.globals
         );
         gameObject.move(this.squareNumToCoordinates(0));
-        /*const animalComponent = */gameObject.addComponent(
+        /*const animalComponent = */ gameObject.addComponent(
           Animal,
           this.models[name],
           this.three.globals
@@ -383,10 +382,10 @@ export default {
       // HANDLE JAIL/VISITING
     },
     until(conditionFunction) {
-      const poll = resolve => {
-        if(conditionFunction()) resolve();
+      const poll = (resolve) => {
+        if (conditionFunction()) resolve();
         else setTimeout(() => poll(resolve), 400);
-      }
+      };
       return new Promise(poll);
     },
     async randomDiceThrow() {
@@ -422,67 +421,77 @@ export default {
       return this.until(() => this.dice.every((dice) => dice.isFinished()));
     },
     async nextState() {
-      this.$store.dispatch('nextState');
-      await this.connection.updateChannel();
-      this.setState(this.state);
+      this.$store.dispatch("nextState");
+      if (this.isCurrentPlayer) this.connection.syncVuex("nextState");
+      await this.setState();
     },
-    async setState(state) {
-      console.log('setting new state')
-      switch(state.positionType) {
+    async setState() {
+      console.log("setting new state");
+      switch (this.state.positionType) {
         case PositionType.Start:
-          state.state.players.forEach(player => this.createAvatar(player))
+          this.state.players.forEach((player) => this.createAvatar(player));
           break;
         case PositionType.Rolling:
-          this.$store.dispatch('rollDice', this.currentPlayer.id);
+          this.$store.dispatch("rollDice", this.currentPlayer.id);
+          // this.connection.syncVuex('rollDice', this.currentPlayer.id);
           await this.randomDiceThrow();
-          await this.nextState();
+          // await this.nextState();
           // check doubles
           break;
         case PositionType.Moving: {
           const newPosition = this.position;
-          const delta = this.$store.getters.getDiceRoll.reduce((a,b) => a+b, 0);
+          const delta = this.$store.getters.getDiceRoll.reduce(
+            (a, b) => a + b,
+            0
+          );
           const oldPosition = newPosition - delta;
-          const steps = [...Array(delta).keys()].map(i => i + oldPosition + 1).map(i => this.squareNumToCoordinates(i))
+          const steps = [...Array(delta).keys()]
+            .map((i) => i + oldPosition + 1)
+            .map((i) => this.squareNumToCoordinates(i));
           await this.pieces.get(this.currentPlayer.id).moveArray(steps);
-          await this.nextState();
+          // await this.nextState();
           break;
         }
         case PositionType.Action: {
           const value = this.position;
-          const old = this.position - this.$store.getters.getDiceRoll.reduce((a,b) => a+b, 0);
+          const old =
+            this.position -
+            this.$store.getters.getDiceRoll.reduce((a, b) => a + b, 0);
           let delta = Math.floor(value / 10) - Math.floor(old / 10);
           if (delta < 0) {
             delta += 4;
           }
           this.angle += (Math.PI * delta) / 2;
+          console.log(this.elements[value])
+          console.log(this.elements[old])
           this.elements[value].componentInstance.active = true;
           this.elements[old].componentInstance.active = false;
           this.elements[value].componentInstance.popup();
           // this.connection.applyChange('applyActionToRolling', value)
           // this.connection.applyChange('applyActionToMaintainence', value)
           break;
-          }
+        }
         case PositionType.Maintenance:
           // this.connection.applyChange('applyMaintainenceToNextPlayer', value)
           // this.connection.applyChange('applyMaintainenceToBankrupt', value)
           break;
         case PositionType.NextPlayer:
-          this.$store.dispatch('nextNonce');
-          this.$store.dispatch('nextPlayer');
-          await this.nextState();
+          this.$store.dispatch("nextPlayer");
+          // this.connection.syncVuex('nextPlayer');
+          // await this.nextState();
           // this.connection.applyChange('applyNextPlayerToRolling', value)
           break;
         case PositionType.Bankrupt:
-          await this.nextState();
+          // await this.nextState();
           // this.connection.applyChange('applyBankruptToNextPlayer', value)
           // this.connection.applyChange('applyBankruptToEnd', value)
           break;
         case PositionType.End:
           break;
       }
-    }
+    },
   },
-  beforeDestroy: function() {
+  beforeDestroy: function () {
     window.removeEventListener("resize", this.onWindowResize);
   },
   mounted() {

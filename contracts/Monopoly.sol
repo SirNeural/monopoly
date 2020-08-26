@@ -88,8 +88,9 @@ contract Monopoly is ForceMoveApp {
         uint256 nonce;
         uint256 currentPlayer;
         uint256 taxes;
-        uint8 houses; // Do i want to implement this?
-        uint8 hotels; // Do i want to implement this?
+        PositionType positionType;
+        uint8 houses;
+        uint8 hotels;
         bytes playersBytes;
         bytes spacesBytes;
         bytes chanceBytes;
@@ -101,8 +102,9 @@ contract Monopoly is ForceMoveApp {
         uint256 nonce;
         uint256 currentPlayer;
         uint256 taxes;
-        uint8 houses; // Do i want to implement this?
-        uint8 hotels; // Do i want to implement this?
+        PositionType positionType;
+        uint8 houses;
+        uint8 hotels;
         Player[] players;
         Space[40] spaces;
         Card[16] chance;
@@ -110,12 +112,6 @@ contract Monopoly is ForceMoveApp {
     }
 
     struct MonopolyData {
-        // uint256 blockNum;
-        // uint256 moveNum;
-
-        // Num houses/hotels
-
-        PositionType positionType;
         bytes appStateBytes; // MonopolyState
         bytes appTurnBytes; // Turn[]
     }
@@ -164,7 +160,7 @@ contract Monopoly is ForceMoveApp {
         Space[40] memory spaces = abi.decode(temp.spacesBytes, (Space[40]));
         Card[16] memory chance = abi.decode(temp.chanceBytes, (Card[16]));
         Card[17] memory communityChest = abi.decode(temp.communityChestBytes, (Card[17]));
-        return MonopolyState(temp.channelId, temp.nonce, temp.currentPlayer, temp.taxes, temp.houses, temp.hotels, players, spaces, chance, communityChest);
+        return MonopolyState(temp.channelId, temp.nonce, temp.currentPlayer, temp.taxes, temp.positionType, temp.houses, temp.hotels, players, spaces, chance, communityChest);
     }
 
     function appTurns(bytes memory appTurnBytes)
@@ -173,6 +169,56 @@ contract Monopoly is ForceMoveApp {
         returns (Turn[] memory)
     {
         return abi.decode(appTurnBytes, (Turn[]));
+    }
+
+    function numActivePlayers(Player[] memory players) public pure returns (uint8) {
+        uint8 result = 0;
+        for(uint256 i = 0; i < players.length; i++) {
+            if(!players[i].bankrupt)
+                result += 1;
+        }
+        return result;
+    }
+
+    function nextState(
+        MonopolyData memory fromGameData,
+        Turn memory turn
+    ) public pure returns (MonopolyState memory) {
+        MonopolyState memory fromGameState = appState(fromGameData);
+        if(fromGameState.positionType == PositionType.Start) {
+            return Rolling(fromGameState, turn);
+        } else if(fromGameState.positionType == PositionType.Rolling) {
+            if(fromGameState.players[fromGameState.currentPlayer].jailed == 0) {
+                return Moving(fromGameState, turn);
+            } else {
+                return NextPlayer(fromGameState, turn);
+            }
+        } else if(fromGameState.positionType == PositionType.Moving) {
+            return Action(fromGameState, turn);
+        } else if(fromGameState.positionType == PositionType.Action) {
+            uint8[2] memory roll = getRoll(fromGameState);
+            if(roll[0] == roll[1]) {
+                return Rolling(fromGameState, turn);
+            } else {
+                return Maintenance(fromGameState, turn);
+            }
+        } else if(fromGameState.positionType == PositionType.Maintenance) {
+            if (fromGameState.players[fromGameState.currentPlayer].balance < 0) {
+                return Bankrupt(fromGameState, turn);
+            } else {
+                return NextPlayer(fromGameState, turn);
+            }
+        } else if(fromGameState.positionType == PositionType.Bankrupt) {
+            if(numActivePlayers(fromGameState.players) <= 1) {
+                return End(fromGameState, turn);
+            } else {
+                return NextPlayer(fromGameState, turn);
+            }
+        } else if(fromGameState.positionType == PositionType.NextPlayer) {
+            return Rolling(fromGameState, turn);
+        } else {
+            return fromGameState;
+        }
     }
 
     /**
@@ -192,193 +238,15 @@ contract Monopoly is ForceMoveApp {
         MonopolyData memory fromGameData = appData(fromPart.appData);
         MonopolyData memory toGameData = appData(toPart.appData);
 
-        // deduce action
-        if (fromGameData.positionType == PositionType.Start) {
-            // Start
-            require(
-                toGameData.positionType == PositionType.Rolling,
-                "Start may only transition to Rolling"
-            );
-            require(
-                keccak256(toGameData.appStateBytes) ==
-                    keccak256(
-                        abi.encode(
-                            applyStartToRolling(
-                                appState(fromGameData),
-                                getTurn(fromGameData)
-                            )
-                        )
-                    )
-            );
-            return true;
-        } else if (fromGameData.positionType == PositionType.Rolling) {
-            // Rolling,
-            if (toGameData.positionType == PositionType.Moving) {
-                require(
-                    keccak256(toGameData.appStateBytes) ==
-                        keccak256(
-                            abi.encode(
-                                applyRollingToMoving(
-                                    appState(fromGameData),
-                                    getTurn(fromGameData)
-                                )
-                            )
-                        )
-                );
-                return true;
-            } else if (toGameData.positionType == PositionType.NextPlayer) {
-                require(// Jailed
-                    keccak256(toGameData.appStateBytes) ==
-                        keccak256(
-                            abi.encode(
-                                applyRollingToNextPlayer(
-                                    appState(fromGameData),
-                                    getTurn(fromGameData)
-                                )
-                            )
-                        )
-                );
-                return true;
-            }
-            revert("Rolling may only transition to Moving or NextPlayer");
-        } else if (fromGameData.positionType == PositionType.Moving) {
-            // Moving,
-            require(
-                toGameData.positionType == PositionType.Action,
-                "Moving may only transition to Action"
-            );
-            require(
-                keccak256(toGameData.appStateBytes) ==
-                    keccak256(
-                        abi.encode(
-                            applyMovingToAction(
-                                appState(fromGameData),
-                                getTurn(fromGameData)
-                            )
-                        )
-                    )
-            );
-            return true;
-        } else if (fromGameData.positionType == PositionType.Action) {
-            // Action,
-            if (toGameData.positionType == PositionType.Rolling) {
-                require(
-                    keccak256(toGameData.appStateBytes) ==
-                        keccak256(
-                            abi.encode(
-                                applyActionToRolling(
-                                    appState(fromGameData),
-                                    getTurn(fromGameData)
-                                )
-                            )
-                        )
-                );
-                return true;
-            } else if (toGameData.positionType == PositionType.Maintenance) {
-                require(
-                    keccak256(toGameData.appStateBytes) ==
-                        keccak256(
-                            abi.encode(
-                                applyActionToMaintainence(
-                                    appState(fromGameData),
-                                    getTurn(fromGameData)
-                                )
-                            )
-                        )
-                );
-                return true;
-            }
-            revert("Action may only transition to Rolling or Maintenance");
-        } else if (fromGameData.positionType == PositionType.Maintenance) {
-            // Maintenance,
-            if (toGameData.positionType == PositionType.NextPlayer) {
-                require(
-                    keccak256(toGameData.appStateBytes) ==
-                        keccak256(
-                            abi.encode(
-                                applyMaintainenceToNextPlayer(
-                                    appState(fromGameData),
-                                    getTurn(fromGameData)
-                                )
-                            )
-                        )
-                );
-                return true;
-            } else if (toGameData.positionType == PositionType.Bankrupt) {
-                require(
-                    keccak256(toGameData.appStateBytes) ==
-                        keccak256(
-                            abi.encode(
-                                applyMaintainenceToBankrupt(
-                                    appState(fromGameData),
-                                    getTurn(fromGameData)
-                                )
-                            )
-                        )
-                );
-                return true;
-            }
-            revert(
-                "Maintainence may only transition to NextPlayer or Bankrupt"
-            );
-        } else if (fromGameData.positionType == PositionType.NextPlayer) {
-            // NextPlayer,
-            require(
-                toGameData.positionType == PositionType.Rolling,
-                "NextPlayer may only transition to Rolling"
-            );
-            require(
-                    keccak256(toGameData.appStateBytes) ==
-                        keccak256(
-                            abi.encode(
-                                applyNextPlayerToRolling(
-                                    appState(fromGameData),
-                                    getTurn(fromGameData)
-                                )
-                            )
-                        )
-                );
-            return true;
-        } else if (fromGameData.positionType == PositionType.Bankrupt) {
-            // Bankrupt,
-            if (toGameData.positionType == PositionType.NextPlayer) {
-                require(
-                    keccak256(toGameData.appStateBytes) ==
-                        keccak256(
-                            abi.encode(
-                                applyBankruptToNextPlayer(
-                                    appState(fromGameData),
-                                    getTurn(fromGameData)
-                                )
-                            )
-                        )
-                );
-                return true;
-            } else if (toGameData.positionType == PositionType.End) {
-                require(
-                    keccak256(toGameData.appStateBytes) ==
-                        keccak256(
-                            abi.encode(
-                                applyBankruptToEnd(
-                                    appState(fromGameData),
-                                    getTurn(fromGameData)
-                                )
-                            )
-                        )
-                );
-                return true;
-            }
-            revert("Bankrupt may only transition to NextPlayer or End");
-        } else if (fromGameData.positionType == PositionType.End) {
-            // End
-            // require(
-            //     toGameData.positionType == PositionType.Start,
-            //     "End may only transition to Start"
-            // );
-            // requireValidEndToStart(fromGameData, toGameData);
-            // return true;
+        if(appState(fromGameData).positionType == PositionType.End) {
+            return false;
         }
-        revert("No valid transition found");
+        MonopolyState memory tempGameState;
+        do {
+            tempGameState = nextState(fromGameData, getTurn(fromGameData));
+        } while (tempGameState.positionType != PositionType.NextPlayer);
+        require(keccak256(toGameData.appStateBytes) == keccak256(abi.encode(tempGameState)));
+        return true;
     }
 
     function getCurrentPlayer(MonopolyState memory fromGameState)
@@ -495,24 +363,37 @@ contract Monopoly is ForceMoveApp {
         return true;
     }
 
-    function applyStartToRolling(
+    function Start(
         MonopolyState memory fromGameState,
         Turn memory turn
     ) public pure returns (MonopolyState memory) {
         MonopolyState memory toGameState = copyStruct(fromGameState);
+        toGameState.positionType = PositionType.Start;
+        return toGameState;
+    }
+
+    function Rolling(
+        MonopolyState memory fromGameState,
+        Turn memory turn
+    ) public pure returns (MonopolyState memory) {
+        MonopolyState memory toGameState = copyStruct(fromGameState);
+        toGameState.positionType = PositionType.Rolling;
         toGameState.nonce += 1;
         uint8[2] memory roll = getRoll(toGameState);
         if (roll[0] == roll[1]) {
             toGameState.players[toGameState.currentPlayer].doublesRolled += 1;
+            if(toGameState.players[fromGameState.currentPlayer].doublesRolled == 3)
+                toGameState.players[fromGameState.currentPlayer].jailed = 1;
         }
         return toGameState;
     }
 
-    function applyRollingToMoving(
+    function Moving(
         MonopolyState memory fromGameState,
         Turn memory turn
     ) public pure returns (MonopolyState memory) {
         MonopolyState memory toGameState = copyStruct(fromGameState);
+        toGameState.positionType = PositionType.Moving;
         uint8[2] memory roll = getRoll(fromGameState);
         Player memory fromPlayer = getCurrentPlayer(fromGameState);
         if (roll[0] == roll[1] && fromPlayer.jailed > 0) {
@@ -533,16 +414,12 @@ contract Monopoly is ForceMoveApp {
         return toGameState;
     }
 
-    function applyRollingToNextPlayer(
+    function NextPlayer(
         MonopolyState memory fromGameState,
         Turn memory turn
     ) public pure returns (MonopolyState memory) {
         MonopolyState memory toGameState = copyStruct(fromGameState);
-        uint8[2] memory roll = getRoll(fromGameState);
-        Player memory fromPlayer = getCurrentPlayer(fromGameState);
-        require(roll[0] != roll[1]);
-        require(fromPlayer.jailed > 0);
-        toGameState.players[toGameState.currentPlayer].jailed += 1;
+        toGameState.positionType = PositionType.NextPlayer;
         toGameState.currentPlayer = getNextPlayer(fromGameState);
         return toGameState;
     }
@@ -694,11 +571,12 @@ contract Monopoly is ForceMoveApp {
         return false;
     }
 
-    function applyMovingToAction(
+    function Action(
         MonopolyState memory fromGameState,
         Turn memory turn
     ) public pure returns (MonopolyState memory) {
         MonopolyState memory toGameState = copyStruct(fromGameState);
+        toGameState.positionType = PositionType.Action;
         uint8[2] memory roll = getRoll(fromGameState);
         Player memory player = getCurrentPlayer(fromGameState);
         Space memory playerSpace = fromGameState.spaces[player.position];
@@ -772,26 +650,6 @@ contract Monopoly is ForceMoveApp {
         return toGameState;
     }
 
-    function applyActionToRolling(
-        MonopolyState memory fromGameState,
-        Turn memory turn
-    ) public pure returns (MonopolyState memory) {
-        MonopolyState memory toGameState = copyStruct(fromGameState);
-        toGameState.nonce += 1;
-        uint8[2] memory toRoll = getRoll(toGameState);
-        if (toRoll[0] == toRoll[1]) {
-            toGameState.players[fromGameState.currentPlayer].doublesRolled += 1;
-            if (
-                toGameState.players[fromGameState.currentPlayer]
-                    .doublesRolled == 3
-            ) {
-                toGameState.players[fromGameState.currentPlayer].jailed = 1;
-            }
-        }
-
-        return toGameState;
-    }
-
     function playerOwnsSpace(Space memory space, Player memory player)
         public
         pure
@@ -801,11 +659,12 @@ contract Monopoly is ForceMoveApp {
     }
 
 
-    function applyActionToMaintainence(
+    function Maintenance(
         MonopolyState memory fromGameState,
         Turn memory turn
     ) public pure returns (MonopolyState memory) {
         MonopolyState memory toGameState = copyStruct(fromGameState);
+        toGameState.positionType = PositionType.Maintenance;
         for (uint256 i = 0; i < turn.mortgaged.length; i++) {
             if (
                 playerOwnsSpace(
@@ -865,52 +724,22 @@ contract Monopoly is ForceMoveApp {
         }
     }
 
-    function applyMaintainenceToNextPlayer(
+    function Bankrupt(
         MonopolyState memory fromGameState,
         Turn memory turn
     ) public pure returns (MonopolyState memory) {
         MonopolyState memory toGameState = copyStruct(fromGameState);
-        toGameState.currentPlayer = getNextPlayer(fromGameState);
-        return toGameState;
-    }
-
-    function applyMaintainenceToBankrupt(
-        MonopolyState memory fromGameState,
-        Turn memory turn
-    ) public pure returns (MonopolyState memory) {
-        MonopolyState memory toGameState = copyStruct(fromGameState);
+        toGameState.positionType = PositionType.Bankrupt;
         toGameState.players[toGameState.currentPlayer].bankrupt = true;
         return toGameState;
     }
 
-    function applyNextPlayerToRolling(
+    function End(
         MonopolyState memory fromGameState,
         Turn memory turn
     ) public pure returns (MonopolyState memory) {
         MonopolyState memory toGameState = copyStruct(fromGameState);
-        toGameState.nonce += 1;
-        uint8[2] memory roll = getRoll(toGameState);
-        if (roll[0] == roll[1]) {
-            toGameState.players[toGameState.currentPlayer].doublesRolled += 1;
-        }
-        return toGameState;
-    }
-
-    function applyBankruptToNextPlayer(
-        MonopolyState memory fromGameState,
-        Turn memory turn
-    ) public pure returns (MonopolyState memory) {
-        MonopolyState memory toGameState = copyStruct(fromGameState);
-        toGameState.players[toGameState.currentPlayer].bankrupt = true;
-        return toGameState;
-    }
-
-    function applyBankruptToEnd(
-        MonopolyState memory fromGameState,
-        Turn memory turn
-    ) public pure returns (MonopolyState memory) {
-        MonopolyState memory toGameState = copyStruct(fromGameState);
-
+        toGameState.positionType = PositionType.End;
         return toGameState;
     }
 

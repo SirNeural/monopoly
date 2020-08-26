@@ -78,6 +78,7 @@
 <script>
 import { mapGetters } from "vuex";
 export default {
+  inject: ["connection"],
   data() {
     return {
       name: "Community Chest",
@@ -89,8 +90,8 @@ export default {
     ...mapGetters({
       self: "getSelfAddress",
       player: "getCurrentPlayer",
-      card: "getCommunityChest"
-    })
+      card: "getCommunityChest",
+    }),
   },
   methods: {
     async popup() {
@@ -169,22 +170,30 @@ export default {
                 <div class="flex flex-col text-center">
                 <div class="flex flex-row justify-center text-xl py-1 font-medium">
                             <div>
-                            ${this.card.message.split('–')[0]}
+                            ${this.card.message.split("–")[0]}
                             </div>
                 </div>
                 <div class="flex flex-row justify-center text-lg py-2"><div>` +
-            this.card.message.split('–')
+            this.card.message
+              .split("–")
               .slice(1)
               .join(
                 '</div></div><div class="flex flex-row justify-center text-lg py-2"><div>'
               ) +
             `</div></div></div>`
         ),
-        className: "normal-case"
+        className: "normal-case",
       });
-      if(this.self == this.player.id)
-        this.$store.dispatch('drawCard', {address: this.player.id, type: 'communityChest'});
-    }
-  }
+      if (this.self == this.player.id)
+        this.$store.dispatch("drawCard", {
+          address: this.player.id,
+          type: "communityChest",
+        });
+      this.connection.syncVuex("drawCard", {
+        address: this.player.id,
+        type: "communityChest",
+      });
+    },
+  },
 };
 </script>
