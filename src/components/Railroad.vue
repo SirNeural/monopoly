@@ -28,7 +28,6 @@
 <script>
 import { mapGetters } from "vuex";
 export default {
-    inject: ['connection'],
     props: { name: String, long: Boolean },
     data() {
         return {

@@ -78,7 +78,6 @@
 <script>
 import { mapGetters } from "vuex";
 export default {
-  inject: ["connection"],
   data() {
     return {
       name: "Community Chest",
@@ -184,15 +183,12 @@ export default {
         ),
         className: "normal-case",
       });
-      if (this.self == this.player.id)
+      if (this.self == this.player.id) {
         this.$store.dispatch("drawCard", {
           address: this.player.id,
           type: "communityChest",
         });
-      this.connection.syncVuex("drawCard", {
-        address: this.player.id,
-        type: "communityChest",
-      });
+      }
     },
   },
 };

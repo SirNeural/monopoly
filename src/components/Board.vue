@@ -27,7 +27,7 @@
         <button
           class="p-2 select-none text-xl text-white"
           @click="nextState"
-          v-if="isCurrentPlayer"
+          v-show="isCurrentPlayer"
         >Next State</button>
       </div>
       <div class="flex flex-col items-end">
@@ -58,7 +58,6 @@
 
 <script>
 require("@statechannels/iframe-channel-provider");
-import { Connection } from "../definitions/Connection";
 import { PositionType } from "../definitions/types";
 import { mapGetters, mapState } from "vuex";
 import TWEEN from "@tweenjs/tween.js";
@@ -86,7 +85,6 @@ export default {
     return {
       angle: 0,
       host: false,
-      connection: {},
       world: {},
       dice: [],
       pieces: new Map(),
@@ -142,24 +140,18 @@ export default {
   props: ["elements"],
   computed: {
     ...mapGetters({
+      connection: "getConnection",
       self: "getSelfAddress",
       lastRoll: "getDiceRoll",
       currentPlayer: "getCurrentPlayer",
       position: "getCurrentPlayerPosition",
       username: "getSelfUsername",
+      isCurrentPlayer: "getSelfIsCurrentPlayer"
     }),
     ...mapState(["state"]),
     positionTypeStr() {
       return PositionType[this.state.positionType];
     },
-    isCurrentPlayer() {
-      return this.currentPlayer.id == this.self;
-    },
-  },
-  provide() {
-    return {
-      connection: this.connection,
-    };
   },
   watch: {
     // position(value, old) {
@@ -185,7 +177,6 @@ export default {
     },
     rollDice() {
       this.$store.dispatch("rollDice", this.username);
-      // this.connection.syncVuex("rollDice", this.username);
     },
     async setPlayer() {
       if (this.username) {
@@ -202,18 +193,14 @@ export default {
         },
       });
       if (username) {
-        this.connection = new Connection(
-          username,
-          window.channelProvider,
-          this.$store,
-          this.setState.bind(this),
-          this.host
-        );
-        this.$store.dispatch("setSelf", {
+        this.$store.dispatch("createConnection", {
           username: username,
-          address: this.connection.getSigningAddress(),
+          channelProvider: window.channelProvider,
+          host: this.host
         });
-        this.setState();
+        this.connection.on('state', () => this.setState())
+        this.connection.on('data', () => this.setState())
+        this.connection.on('newPlayer', () => this.setState())
         return true;
       }
       return false;
@@ -422,18 +409,17 @@ export default {
     },
     async nextState() {
       this.$store.dispatch("nextState");
-      if (this.isCurrentPlayer) this.connection.syncVuex("nextState");
       await this.setState();
     },
     async setState() {
       console.log("setting new state");
       switch (this.state.positionType) {
         case PositionType.Start:
+          console.log('in starting position, creating avatar for players')
           this.state.players.forEach((player) => this.createAvatar(player));
           break;
         case PositionType.Rolling:
           this.$store.dispatch("rollDice", this.currentPlayer.id);
-          // this.connection.syncVuex('rollDice', this.currentPlayer.id);
           await this.randomDiceThrow();
           // await this.nextState();
           // check doubles
@@ -467,28 +453,21 @@ export default {
           this.elements[value].componentInstance.active = true;
           this.elements[old].componentInstance.active = false;
           this.elements[value].componentInstance.popup();
-          // this.connection.applyChange('applyActionToRolling', value)
-          // this.connection.applyChange('applyActionToMaintainence', value)
           break;
         }
         case PositionType.Maintenance:
-          // this.connection.applyChange('applyMaintainenceToNextPlayer', value)
-          // this.connection.applyChange('applyMaintainenceToBankrupt', value)
           break;
         case PositionType.NextPlayer:
           this.$store.dispatch("nextPlayer");
-          // this.connection.syncVuex('nextPlayer');
           // await this.nextState();
-          // this.connection.applyChange('applyNextPlayerToRolling', value)
           break;
         case PositionType.Bankrupt:
           // await this.nextState();
-          // this.connection.applyChange('applyBankruptToNextPlayer', value)
-          // this.connection.applyChange('applyBankruptToEnd', value)
           break;
         case PositionType.End:
           break;
       }
+      console.log('setstate finished')
     },
   },
   beforeDestroy: function () {

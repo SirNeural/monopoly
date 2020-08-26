@@ -12,7 +12,6 @@
 import { mapGetters } from "vuex";
 import { PropertyStatus } from "../definitions/types";
 export default {
-  inject: ["connection"],
   data() {
     return {
       houses: 0,

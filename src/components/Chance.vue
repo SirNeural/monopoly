@@ -12,7 +12,6 @@
 <script>
 import { mapGetters } from "vuex";
 export default {
-  inject: ["connection"],
   data() {
     return {
       name: "Chance",
@@ -54,10 +53,6 @@ export default {
       });
       if (this.self == this.player.id) {
         this.$store.dispatch("drawCard", {
-          address: this.player.id,
-          type: "chance",
-        });
-        this.connection.syncVuex("drawCard", {
           address: this.player.id,
           type: "chance",
         });

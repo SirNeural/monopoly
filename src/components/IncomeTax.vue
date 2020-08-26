@@ -16,7 +16,6 @@
 <script>
 import { mapGetters } from "vuex";
 export default {
-  inject: ["connection"],
   data() {
     return {
       price: 200,

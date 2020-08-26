@@ -3,31 +3,25 @@ import { MonopolyClient } from './MonopolyClient';
 import { monopolyDataFactory, rand } from './Monopoly';
 import { ChannelClient } from '@statechannels/channel-client';
 import { ChannelState } from './Channel';
-import { AppData, MonopolyData, Turn } from './types';
+import { AppData } from './types';
 import { HashZero } from 'ethers/constants';
-// import { MonopolyFactory } from '../../typechain/MonopolyFactory';
-// import { InfuraProvider } from 'ethers/providers'
-// import { CONTRACT_ADDRESS } from '../constants/contract'
+import { EventEmitter } from 'events';
 const niceware = require("niceware")
 
-export class Connection {
+export class Connection extends EventEmitter {
     public id;
     private provider;
     private client;
-    // private contract;
     private participants;
     private self;
     private name;
     private state;
-    private store;
     private avatar;
-    private stateCallback;
+    public initialized = false;
 
-    constructor(name: string, provider, store, stateCallback, host: boolean = false) {
+    constructor() {
+        super();
         this.id = niceware.generatePassphrase(8).join('-').toLowerCase();
-        // this.contract = MonopolyFactory.connect(CONTRACT_ADDRESS, new InfuraProvider("goerli", process.env.INFURA_API_KEY));
-        this.name = name;
-        this.store = store;
         this.participants = new Map();
         this.self = new Peer(this.id, {
             config: {
@@ -43,6 +37,10 @@ export class Connection {
                 }]
             }
         });
+    }
+
+    public initialize (name: string, provider, host) {
+        this.name = name;
         this.self.on('connection', (conn) => {
             console.log('connection opened');
             conn.on('data', async (data) => {
@@ -57,7 +55,7 @@ export class Connection {
                 }
                 console.log('connection opened, sending new player to vuex')
                 console.log(conn.metadata.signingAddress);
-                this.store.dispatch('newPlayer', { username: conn.metadata.name, address: conn.metadata.signingAddress})
+                this.emit('newPlayer', { username: conn.metadata.name, address: conn.metadata.signingAddress})
                 conn.send({ type: 'setName', data: this.name });
                 if (!this.participants.has(conn.peer)) {
                     console.log('Adding new connection to peers list')
@@ -67,8 +65,8 @@ export class Connection {
             });
         });
         this.provider = provider;
-        this.stateCallback = stateCallback;
         this.setChannelClient();
+        this.initialized = true;
     }
 
     setChannelClient () {
@@ -83,8 +81,7 @@ export class Connection {
             console.log('received channel update');
             console.log(channelState);
             this.state = channelState;
-            this.store.dispatch('setState', channelState.appData);
-            this.stateCallback()
+            this.emit('state', channelState.appData);
             switch (channelState.status) {
                 case 'proposed':
                     this.client.joinChannel(channelState.channelId);
@@ -93,7 +90,7 @@ export class Connection {
         });
         console.log('adding self to vuex')
         console.log(this.provider.signingAddress);
-        this.store.dispatch('newPlayer', { username: this.name, address: this.provider.signingAddress });
+        this.emit('newPlayer', { username: this.name, address: this.provider.signingAddress });
     }
     public random (nonce, sender, channelId, offset, max) {
         return rand(nonce, sender, channelId, offset, max);
@@ -131,41 +128,16 @@ export class Connection {
             allocations,
             monopolyDataFactory(this.peersAsParticipants(true))
         );
-        this.store.dispatch('setState', this.state.appData);
+        this.emit('state', this.state.appData);
         // save to vuex
         console.log(this.state);
     }
 
-    syncVuex (action, payload = {}) {
-        this.sendData({
-            type: "state",
-            data: {
-                action: action,
-                payload: JSON.stringify(payload)
-            }
-        });
-    }
-
-    async updateChannel () {
-        const provisionalState = this.store.getters.getState;
+    async updateChannel (state) {
         console.log('updating channel')
-        console.log(provisionalState);
-        this.state = await this.client.updateChannel(this.state.channelId, this.state.allocations, provisionalState);
+        console.log(state);
+        this.state = await this.client.updateChannel(this.state.channelId, this.state.allocations, state);
     }
-
-    // async applyChange (transition: string, turn: Turn) {
-    //     //await this.contract[transition](state, turn);
-    //     const provisionalState = {
-    //         ...this.state,
-    //         appData: {
-    //             ...this.state.appData,
-    //             ...this.store.getters.state
-    //         }
-    //     }
-    //     this.state = await this.client.updateChannel(this.state.channelId, this.state.allocations, provisionalState);
-    //     this.store.dispatch('setState', this.state.appData);
-    //     // save to vuex
-    // }
 
     public joinRoom (roomId: string) {
         if (!this.participants.has(roomId)) {
@@ -192,7 +164,7 @@ export class Connection {
                 this.participants.set(conn.peer, { name: data.data, conn: conn });
                 console.log('sent connection to player, adding to vuex')
                 console.log(this.provider.signingAddress);
-                this.store.dispatch('newPlayer', { username: data.data, address: conn.metadata.signingAddress })
+                this.emit('newPlayer', { username: data.data, address: conn.metadata.signingAddress })
                 break;
             case 'setAvatar':
                 this.participants.set(conn.peer, { ...this.participants.get(conn.peer), avatar: data.data });
@@ -209,9 +181,8 @@ export class Connection {
                 }
                 break;
             }
-            case 'state': 
-                this.store.dispatch(data.data.action, JSON.parse(data.data.payload))
-                this.stateCallback();
+            case 'vuex':
+                this.emit('data', data.data);
                 break;
         }
     }

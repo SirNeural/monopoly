@@ -10,17 +10,19 @@ import {
 import {
   bigNumberify
 } from 'ethers/utils';
-import { AddressZero, HashZero } from 'ethers/constants';
+import { AddressZero } from 'ethers/constants';
 import { spaces, properties } from './properties.json';
 import { chance, communityChest } from './cards.json';
+import syncPlugin from './sync';
+import { Connection } from '@/definitions/Connection';
 
 Vue.use(Vuex);
 
+const connection = new Connection();
+const connectionSync = syncPlugin(connection);
+
 const state = {
-  self: {
-    username: '',
-    address: '',
-  },
+  connection: connection,
   state: {
     channelId: randomChannelId(),
     nonce: bigNumberify(0),
@@ -58,51 +60,54 @@ const debit = (player, amount, force = false) => {
 };
 
 const mutations = {
+  CREATE_CONNECTION: (state, { username, channelProvider, host }) => {
+    state.connection.initialize(username, channelProvider, host);
+  },
   SET_STATE: (state, newState) => {
-    state.turns = newState.turns;
-    state.state = newState.state;
+    Vue.set(state, "turns", newState.turns);
+    Vue.set(state, "state", newState.state);
   },
   NEXT_STATE: (state) => {
     switch (state.state.positionType) {
       case PositionType.Start:
-        state.state.positionType = PositionType.Rolling;
+        Vue.set(state.state, "positionType", PositionType.Rolling);
         // rolling
         break;
       case PositionType.Rolling:
         if (state.state.players[state.state.currentPlayer.toNumber()].jailed == 0) {
-          state.state.positionType = PositionType.Moving;
+          Vue.set(state.state, "positionType", PositionType.Moving);
         } else {
-          state.state.positionType = PositionType.NextPlayer;
+          Vue.set(state.state, "positionType", PositionType.NextPlayer);
         }
         break;
       case PositionType.Moving:
-        state.state.positionType = PositionType.Action;
+        Vue.set(state.state, "positionType", PositionType.Action);
         break;
       case PositionType.Action:
         if (rand(state.state.nonce.toNumber(), state.state.players[state.state.currentPlayer].id, state.state.channelId, 0, 6) == rand(state.state.nonce.toNumber(), state.state.players[state.state.currentPlayer].id, state.state.channelId, 1, 6)) {
           console.log('action to rolling #1: ' + rand(state.state.nonce.toNumber(), state.state.players[state.state.currentPlayer].id, state.state.channelId, 0, 6))
           console.log('action to rolling #2: ' + rand(state.state.nonce.toNumber(), state.state.players[state.state.currentPlayer].id, state.state.channelId, 1, 6))
-          state.state.positionType = PositionType.Rolling;
+          Vue.set(state.state, "positionType", PositionType.Rolling);
         } else {
-          state.state.positionType = PositionType.Maintenance;
+          Vue.set(state.state, "positionType", PositionType.Maintenance);
         }
         break;
       case PositionType.Maintenance:
         if (state.state.players[state.state.currentPlayer.toNumber()].balance < 0) {
           //bankrupt
-          state.state.positionType = PositionType.Bankrupt;
+          Vue.set(state.state, "positionType", PositionType.Bankrupt);
         } else {
-          state.state.positionType = PositionType.NextPlayer;
+          Vue.set(state.state, "positionType", PositionType.NextPlayer);
         }
         break;
       case PositionType.NextPlayer:
-        state.state.positionType = PositionType.Rolling;
+        Vue.set(state.state, "positionType", PositionType.Rolling);
         break;
       case PositionType.Bankrupt:
         if (state.state.players.filter(player => !player.bankrupt).length <= 1) {
-          state.state.positionType = PositionType.End;
+          Vue.set(state.state, "positionType", PositionType.End);
         } else {
-          state.state.positionType = PositionType.NextPlayer;
+          Vue.set(state.state, "positionType", PositionType.NextPlayer);
         }
         break;
       case PositionType.End:
@@ -326,10 +331,6 @@ const mutations = {
     }
     Vue.set(state.state, "currentPlayer", bigNumberify(nextPlayer));
   },
-  SET_SELF: (state, { username, address }) => {
-    Vue.set(state.self, "username", username);
-    Vue.set(state.self, "address", address);
-  },
   JAIL_PLAYER: (state) => {
     const player = state.state.players[state.state.currentPlayer.toNumber()];
     Vue.set(player, "position", 10);
@@ -357,6 +358,13 @@ const mutations = {
 const actions = {
   setState: (context, newState) => {
     context.commit("SET_STATE", newState);
+  },
+  createConnection: (context, { username, channelProvider, host }) => {
+    context.commit("CREATE_CONNECTION", {
+      username: username,
+      channelProvider: channelProvider,
+      host: host
+    })
   },
   nextState: (context) => {
     context.commit("NEXT_STATE");
@@ -444,14 +452,8 @@ const actions = {
   setPeer: (context, room) => {
     context.commit("SET_PEER", room);
   },
-  nextNonce: (context) => {
-    context.commit("NEXT_NONCE");
-  },
   nextPlayer: (context) => {
     context.commit("NEXT_PLAYER");
-  },
-  setSelf: (context, { username, address }) => {
-    context.commit("SET_SELF", { username: username, address: address});
   },
   jailPlayer: (context) => {
     context.commit("JAIL_PLAYER");
@@ -560,13 +562,16 @@ const getters = {
     return state.state.players.length > 0 ? [0, 1].map(i => rand(state.state.nonce.toNumber(), state.state.players[state.state.currentPlayer.toNumber()].id, state.state.channelId, i, 6) + 1) : [];
   },
   getSelfUsername: state => {
-    return state.self.username;
+    return state.connection.initialized && state.connection.username;
   },
   getSelfAddress: state => {
-    return state.self.address;
+    return state.connection.initialized && state.connection.getSigningAddress();
   },
   getSelfIsCurrentPlayer: state => {
-    return state.self.address == state.state.players[state.state.currentPlayer].id;
+    return state.connection.initialized && (state.connection.getSigningAddress() == state.state.players[state.state.currentPlayer].id);
+  },
+  getConnection: state => {
+    return state.connection;
   }
 };
 
@@ -574,5 +579,6 @@ export default new Vuex.Store({
   state,
   mutations,
   actions,
-  getters
+  getters,
+  plugins: [connectionSync]
 });
