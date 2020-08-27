@@ -408,6 +408,8 @@ export default {
       return this.until(() => this.dice.every((dice) => dice.isFinished()));
     },
     async nextState() {
+      if(this.$swal.getState().isOpen)
+        this.$swal.close()
       this.$store.dispatch("nextState");
       await this.setState();
     },
@@ -449,8 +451,6 @@ export default {
             delta += 4;
           }
           this.angle += (Math.PI * delta) / 2;
-          console.log(this.elements[value])
-          console.log(this.elements[old])
           this.elements[value].componentInstance.active = true;
           this.elements[old].componentInstance.active = false;
           this.elements[value].componentInstance.popup();
@@ -459,8 +459,10 @@ export default {
         case PositionType.Maintenance:
           break;
         case PositionType.NextPlayer:
-          if(this.isCurrentPlayer)
+          if(this.isCurrentPlayer){
             this.$store.dispatch("nextPlayer");
+            this.connection.updateChannel(this.$store.getters.getState);
+          }
           // await this.nextState();
           break;
         case PositionType.Bankrupt:
