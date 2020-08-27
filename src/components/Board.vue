@@ -42,6 +42,7 @@
       </div>
       <div class="text-lg text-white normal-case">
         <div>{{ positionTypeStr }}</div>
+        <div>{{ currentPlayer.name }}</div>
         <div
           v-hide="
             state.positionType == 0 || state.positionType == 5 ||
@@ -421,10 +422,13 @@ export default {
           this.state.players.forEach((player) => this.createAvatar(player));
           break;
         case PositionType.Rolling:
-          if(this.isCurrentPlayer)
+          if(this.isCurrentPlayer) {
             this.$store.dispatch("rollDice", this.currentPlayer.id);
+          }
           await this.randomDiceThrow();
-          // await this.nextState();
+          if(this.isCurrentPlayer) {
+            await this.nextState();
+          }
           // check doubles
           break;
         case PositionType.Moving: {
@@ -438,7 +442,9 @@ export default {
             .map((i) => i + oldPosition + 1)
             .map((i) => this.squareNumToCoordinates(i));
           await this.pieces.get(this.currentPlayer.id).moveArray(steps);
-          // await this.nextState();
+          if(this.isCurrentPlayer) {
+            await this.nextState();
+          }
           break;
         }
         case PositionType.Action: {
@@ -459,7 +465,7 @@ export default {
         case PositionType.Maintenance:
           break;
         case PositionType.NextPlayer:
-          if(this.isCurrentPlayer){
+          if(this.isCurrentPlayer) {
             this.$store.dispatch("nextPlayer");
             this.connection.updateChannel(this.$store.getters.getState);
           }
