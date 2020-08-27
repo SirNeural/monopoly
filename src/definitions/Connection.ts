@@ -15,7 +15,8 @@ export class Connection extends EventEmitter {
     private participants;
     private self;
     private name;
-    private state;
+    private channelId;
+    private allocations;
     private avatar;
     public initialized = false;
 
@@ -80,12 +81,14 @@ export class Connection extends EventEmitter {
         this.client.onChannelUpdated((channelState: ChannelState<AppData>) => {
             console.log('received channel update');
             console.log(channelState);
-            this.state = channelState;
-            this.emit('state', channelState.appData);
+            this.channelId = channelState.channelId;
+            this.allocations = channelState.allocations;
             switch (channelState.status) {
                 case 'proposed':
-                    this.client.joinChannel(channelState.channelId);
+                    this.client.joinChannel(this.channelId);
+                    break;
             }
+            this.emit('state', channelState.appData);
             // save to vuex
         });
         console.log('adding self to vuex')
@@ -123,20 +126,20 @@ export class Connection extends EventEmitter {
             allocationItems: participants.map(participants => ({ destination: participants.destination, amount: HashZero }))
         }];
         console.log(allocations);
-        this.state = await this.client.createChannel(
+        const state = await this.client.createChannel(
             participants,
             allocations,
             monopolyDataFactory(this.peersAsParticipants(true))
         );
-        this.emit('state', this.state.appData);
+        this.emit('state', state.appData);
         // save to vuex
-        console.log(this.state);
+        console.log(state);
     }
 
     async updateChannel (state) {
         console.log('updating channel')
         console.log(state);
-        this.state = await this.client.updateChannel(this.state.channelId, this.state.allocations, state);
+        await this.client.updateChannel(this.channelId, this.allocations, state);
     }
 
     public joinRoom (roomId: string) {

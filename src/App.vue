@@ -3,7 +3,6 @@
 </style>
 
 <script>
-import { mapGetters } from "vuex";
 import Board from "@/components/Board.vue";
 import Center from "@/components/Center.vue";
 import Chance from "@/components/Chance.vue";
@@ -18,6 +17,8 @@ import Parking from "@/components/Parking.vue";
 import Property from "@/components/Property.vue";
 import Railroad from "@/components/Railroad.vue";
 import WaterWorks from "@/components/WaterWorks.vue";
+import { loadSpaces } from './definitions';
+import { spaces, properties } from './store/properties.json';
 export default {
   name: "App",
   components: {
@@ -37,9 +38,9 @@ export default {
     WaterWorks
   },
   computed: {
-    ...mapGetters({
-      spaces: "getSpaces"
-    })
+    spaces() {
+      return loadSpaces(spaces, properties);
+    }
   },
   data() {
     return {

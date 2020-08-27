@@ -419,7 +419,8 @@ export default {
           this.state.players.forEach((player) => this.createAvatar(player));
           break;
         case PositionType.Rolling:
-          this.$store.dispatch("rollDice", this.currentPlayer.id);
+          if(this.isCurrentPlayer)
+            this.$store.dispatch("rollDice", this.currentPlayer.id);
           await this.randomDiceThrow();
           // await this.nextState();
           // check doubles
@@ -458,7 +459,8 @@ export default {
         case PositionType.Maintenance:
           break;
         case PositionType.NextPlayer:
-          this.$store.dispatch("nextPlayer");
+          if(this.isCurrentPlayer)
+            this.$store.dispatch("nextPlayer");
           // await this.nextState();
           break;
         case PositionType.Bankrupt:

@@ -63,10 +63,6 @@ const mutations = {
   CREATE_CONNECTION: (state, { username, channelProvider, host }) => {
     state.connection.initialize(username, channelProvider, host);
   },
-  SET_STATE: (state, newState) => {
-    Vue.set(state, "turns", newState.turns);
-    Vue.set(state, "state", newState.state);
-  },
   NEXT_STATE: (state) => {
     switch (state.state.positionType) {
       case PositionType.Start:
@@ -84,7 +80,7 @@ const mutations = {
         Vue.set(state.state, "positionType", PositionType.Action);
         break;
       case PositionType.Action:
-        if (rand(state.state.nonce.toNumber(), state.state.players[state.state.currentPlayer].id, state.state.channelId, 0, 6) == rand(state.state.nonce.toNumber(), state.state.players[state.state.currentPlayer].id, state.state.channelId, 1, 6)) {
+        if (rand(state.state.nonce.toNumber(), state.state.players[state.state.currentPlayer.toNumber()].id, state.state.channelId, 0, 6) == rand(state.state.nonce.toNumber(), state.state.players[state.state.currentPlayer.toNumber()].id, state.state.channelId, 1, 6)) {
           console.log('action to rolling #1: ' + rand(state.state.nonce.toNumber(), state.state.players[state.state.currentPlayer].id, state.state.channelId, 0, 6))
           console.log('action to rolling #2: ' + rand(state.state.nonce.toNumber(), state.state.players[state.state.currentPlayer].id, state.state.channelId, 1, 6))
           Vue.set(state.state, "positionType", PositionType.Rolling);
@@ -113,9 +109,6 @@ const mutations = {
       case PositionType.End:
         break;
     }
-  },
-  CHANGE_PLAYER: (state, username) => {
-    state.currentPlayer = username;
   },
   NEW_PLAYER: (state, {
     username,
@@ -260,13 +253,13 @@ const mutations = {
         Vue.set(player, "getOutOfJailFreeCards", player.getOutOfJailFreeCards + 1);
         break;
       case ActionType.MoveSpaces:
-        Vue.set(player, "position", player.position + bigNumberify(card.amount).toNumber());
+        Vue.set(player, "position", player.position + card.amount.toNumber());
         if (state.state.spaces[player.position + card.amount].status == PropertyStatus.Unowned) {
           // buy property
         }
         break;
       case ActionType.MoveBackSpaces:
-        Vue.set(player, "position", player.position - bigNumberify(card.amount).toNumber());
+        Vue.set(player, "position", player.position - card.amount.toNumber());
         if (state.state.spaces[player.position + card.amount].status == PropertyStatus.Unowned) {
           // buy property
         }
@@ -356,9 +349,6 @@ const mutations = {
 };
 
 const actions = {
-  setState: (context, newState) => {
-    context.commit("SET_STATE", newState);
-  },
   createConnection: (context, { username, channelProvider, host }) => {
     context.commit("CREATE_CONNECTION", {
       username: username,
@@ -368,16 +358,6 @@ const actions = {
   },
   nextState: (context) => {
     context.commit("NEXT_STATE");
-  },
-  setPlayer: (context, {
-    username,
-    address
-  }) => {
-    context.commit("NEW_PLAYER", {
-      username: username,
-      address: address
-    });
-    context.commit("CHANGE_PLAYER", username);
   },
   newPlayer: (context, {
     username,
@@ -568,7 +548,7 @@ const getters = {
     return state.connection.initialized && state.connection.getSigningAddress();
   },
   getSelfIsCurrentPlayer: state => {
-    return state.connection.initialized && (state.connection.getSigningAddress() == state.state.players[state.state.currentPlayer].id);
+    return state.connection.initialized && (state.connection.getSigningAddress() == state.state.players[state.state.currentPlayer.toNumber()].id);
   },
   getConnection: state => {
     return state.connection;
