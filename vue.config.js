@@ -1,7 +1,7 @@
 module.exports = {
     devServer: {
         watchOptions: {
-            poll: 2000
+            poll: 10000
         }
     },
     chainWebpack: config => {

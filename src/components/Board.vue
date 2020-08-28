@@ -199,9 +199,9 @@ export default {
           channelProvider: window.channelProvider,
           host: this.host
         });
-        this.connection.on('state', () => this.setState())
-        this.connection.on('data', () => this.setState())
-        this.connection.on('newPlayer', () => this.setState())
+        this.connection.on('state', () => this.setState(true))
+        this.connection.on('data', () => this.setState(true))
+        this.connection.on('newPlayer', () => this.setState(true))
         return true;
       }
       return false;
@@ -376,8 +376,8 @@ export default {
       };
       return new Promise(poll);
     },
-    async randomDiceThrow() {
-      let diceValues = this.lastRoll.map((value, i) => {
+    async randomDiceThrow(dice) {
+      let diceValues = dice.map((value, i) => {
         this.dice[i].getObject().position.x = -1 * (i + 1) * 15;
         this.dice[i].getObject().position.z = 75;
         this.dice[i].getObject().position.y = 1 * (i + 1) * 15;
@@ -414,7 +414,7 @@ export default {
       this.$store.dispatch("nextState");
       await this.setState();
     },
-    async setState() {
+    async setState(received = false) {
       console.log("setting new state");
       switch (this.state.positionType) {
         case PositionType.Start:
@@ -422,10 +422,10 @@ export default {
           this.state.players.forEach((player) => this.createAvatar(player));
           break;
         case PositionType.Rolling:
-          if(this.isCurrentPlayer) {
-            this.$store.dispatch("rollDice", this.currentPlayer.id);
-          }
-          await this.randomDiceThrow();
+          this.$store.dispatch("rollDice", this.currentPlayer.id);
+          console.log('rolling dice')
+          console.log(this.lastRoll)
+          await this.randomDiceThrow(this.lastRoll);
           if(this.isCurrentPlayer) {
             await this.nextState();
           }
@@ -465,7 +465,7 @@ export default {
         case PositionType.Maintenance:
           break;
         case PositionType.NextPlayer:
-          if(this.isCurrentPlayer) {
+          if(this.isCurrentPlayer && !received) {
             this.$store.dispatch("nextPlayer");
             this.connection.updateChannel(this.$store.getters.getState);
           }
@@ -497,12 +497,11 @@ export default {
 
     this.three.renderers.webgl = new THREE.WebGLRenderer({ alpha: true });
     this.three.renderers.webgl.shadowMap.enabled = true;
-    // this.three.renderers.webgl.setClearColor(0x00ff00, 0.0);
     this.three.renderers.webgl.setSize(window.innerWidth, window.innerHeight);
     this.three.renderers.webgl.domElement.style.position = "absolute";
     this.three.renderers.webgl.domElement.style.zIndex = 1;
     this.three.renderers.webgl.domElement.style.top = 0;
-    this.three.renderers.webgl.domElement.style.pointerEvents = "none"; // make pointer events passthru to CSS Renderer
+    this.three.renderers.webgl.domElement.style.pointerEvents = "none"; // enable pointer events passthru to CSS Renderer
 
     this.three.scenes.css = new THREE.Scene();
     this.three.scenes.webgl = new THREE.Scene();

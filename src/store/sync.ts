@@ -7,7 +7,6 @@ export default function syncPlugin (connection) {
             'rentUtility',
             'mortgageProperty',
             'sellProperty',
-            'rollDice',
             'drawCard',
             'jailPlayer',
             'incomeTax',

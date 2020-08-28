@@ -38,7 +38,7 @@ export function monopolyDataFactory (players: MonopolyParticipant[]): MonopolyDa
             positionType: PositionType.Start,
             houses: 32,
             hotels: 12,
-            players: players.map(player => ({ name: player.username ?? player.signingAddress, avatar: player.avatar ?? 'pig', id: player.signingAddress, bankrupt: false, balance: 1500, jailed: 0, doublesRolled: 0, position: 0, getOutOfJailFreeCards: 0 })),
+            players: players.map(player => ({ name: player.username ?? player.signingAddress, avatar: player.avatar ?? 'pig', id: player.signingAddress, bankrupt: false, balance: bigNumberify(1500), jailed: 0, doublesRolled: 0, position: 0, getOutOfJailFreeCards: 0 })),
             spaces: loadSpaces(spaces, properties),
             chance: loadCards(chance),
             communityChest: loadCards(communityChest)

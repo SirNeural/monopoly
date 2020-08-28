@@ -48,11 +48,11 @@ const state = {
 };
 
 const credit = (player, amount) => {
-  Vue.set(player, "balance", bigNumberify(player.balance).add(amount));
+  Vue.set(player, "balance", player.balance.add(amount));
 };
 const debit = (player, amount, force = false) => {
   if (bigNumberify(player.balance).gte(amount) || force) {
-    Vue.set(player, "balance", bigNumberify(player.balance).sub(amount));
+    Vue.set(player, "balance", player.balance.sub(amount));
     return true;
   } else {
     return false;
@@ -89,7 +89,7 @@ const mutations = {
         }
         break;
       case PositionType.Maintenance:
-        if (state.state.players[state.state.currentPlayer.toNumber()].balance < 0) {
+        if (state.state.players[state.state.currentPlayer.toNumber()].balance.lt(0)) {
           //bankrupt
           Vue.set(state.state, "positionType", PositionType.Bankrupt);
         } else {
@@ -115,7 +115,7 @@ const mutations = {
     address
   }) => {
     if (!state.state.players.some(player => player.name == username)) {
-      state.state.players.push({ name: username, id: address, bankrupt: false, balance: bigNumberify(1500).toString(), jailed: 0, doublesRolled: 0, position: 0, getOutOfJailFreeCards: 0 });
+      state.state.players.push({ name: username, id: address, bankrupt: false, balance: bigNumberify(1500), jailed: 0, doublesRolled: 0, position: 0, getOutOfJailFreeCards: 0 });
     }
   },
   BUY_PROPERTY: (state, {
@@ -227,7 +227,7 @@ const mutations = {
       state.currentTurn.unmortgaged.push(property.id);
     }
   },
-  DRAW_CARD: (state, {address, type}) => {
+  DRAW_CARD: (state, { address, type }) => {
     const player = state.state.players.find(player => player.id == address) || {};
     const card = state.state[type][rand(state.state.nonce.toNumber(), player.id, state.state.channelId, 2, state.state[type].length)];
     switch (card.action) {
@@ -272,7 +272,7 @@ const mutations = {
         break;
       case ActionType.MoveToNearestUtility:
         if (player.position > 28) {
-          Vue.set(player, "balance", 200);
+          credit(player, 200);
           Vue.set(player, "position", 12);
         } else if (player.position > 12) {
           Vue.set(player, "position", 28);
@@ -336,8 +336,7 @@ const mutations = {
   },
   LUXURY_TAX: (state) => {
     const player = state.state.players[state.state.currentPlayer.toNumber()];
-    debit(player, 75, true)
-      Vue.set(player, "balance", player.balance.toNumber - 75);
+    debit(player, 75, true);
     state.state.taxes.add(75);
   },
   FREE_PARKING: (state) => {
@@ -427,7 +426,7 @@ const actions = {
     context.commit("ROLL_DICE", address);
   },
   drawCard: (context, { address, type }) => {
-    context.commit("DRAW_CARD", { address: address, type: type})
+    context.commit("DRAW_CARD", { address: address, type: type })
   },
   setPeer: (context, room) => {
     context.commit("SET_PEER", room);
