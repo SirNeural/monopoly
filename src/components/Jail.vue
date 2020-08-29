@@ -24,14 +24,14 @@ export default {
     return {
       price: 50,
       name: "Jail",
-      active: false
+      active: false,
     };
   },
   computed: {
     ...mapGetters({
       player: "getCurrentPlayer", // get players in jail
-      position: "getCurrentPlayerPosition"
-    })
+      position: "getCurrentPlayerPosition",
+    }),
   },
   methods: {
     action() {},
@@ -48,9 +48,9 @@ export default {
                 </div>
                 </div>`
         ),
-        className: "normal-case"
+        className: "normal-case",
       });
-    }
-  }
+    },
+  },
 };
 </script>

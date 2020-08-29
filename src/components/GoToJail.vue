@@ -21,11 +21,26 @@ export default {
     };
   },
   computed: {
-    ...mapGetters({ player: "getCurrentPlayer", self: "getSelfAddress" }),
+    ...mapGetters({
+      getProperty: "getProperty",
+      isCurrentPlayer: "getSelfIsCurrentPlayer",
+    }),
+    property() {
+      return this.getProperty(this.name);
+    },
+    buttons() {
+      let options = {};
+      if (this.isCurrentPlayer && this.player.position == this.property.id) {
+        options.ok = true;
+      } else {
+        options.cancel = true;
+      }
+      return options;
+    },
   },
   methods: {
     action() {
-      if (this.self == this.player.id) this.$store.dispatch("jailPlayer");
+      if (this.isCurrentPlayer) this.$store.dispatch("jailPlayer");
     },
     async popup() {
       await this.$swal({

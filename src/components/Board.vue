@@ -20,9 +20,9 @@
 
     <div class="flex flex-col flex-wrap min-h-screen justify-around m-8 pb-12" ref="control">
       <div class="flex flex-col items-start">
-        <button class="p-2 select-none text-xl text-white" @click="joinRoom">Join Room</button>
-        <button class="p-2 select-none text-xl text-white" @click="createRoom">Create Room</button>
-        <button v-if="host" class="p-2 select-none text-xl text-white" @click="startGame">Start Game</button>
+        <button v-show="ready" class="p-2 select-none text-xl text-white" @click="joinRoom">Join Room</button>
+        <button v-show="ready" class="p-2 select-none text-xl text-white" @click="createRoom">Create Room</button>
+        <button v-show="ready && host" class="p-2 select-none text-xl text-white" @click="startGame">Start Game</button>
         <button class="p-2 select-none text-xl text-white" @click="rotate">Rotate</button>
         <button
           class="p-2 select-none text-xl text-white"
@@ -37,7 +37,7 @@
           :key="player.name"
         >
           <span class="text-white text-lg">{{ player.name }}:</span>
-          <span class="ml-1 text-white text-xl">${{ player.balance }}</span>
+          <span class="ml-1 text-white text-xl">${{ player.balance.toString() }}</span>
         </div>
       </div>
       <div class="text-lg text-white normal-case">
@@ -84,6 +84,7 @@ import {
 export default {
   data() {
     return {
+      ready: false,
       angle: 0,
       host: false,
       world: {},
@@ -147,7 +148,7 @@ export default {
       currentPlayer: "getCurrentPlayer",
       position: "getCurrentPlayerPosition",
       username: "getSelfUsername",
-      isCurrentPlayer: "getSelfIsCurrentPlayer"
+      isCurrentPlayer: "getSelfIsCurrentPlayer",
     }),
     ...mapState(["state"]),
     positionTypeStr() {
@@ -176,9 +177,6 @@ export default {
       this.three.controls.rotate(Math.PI / 2);
       this.three.controls.update();
     },
-    rollDice() {
-      this.$store.dispatch("rollDice", this.username);
-    },
     async setPlayer() {
       if (this.username) {
         return true;
@@ -197,11 +195,12 @@ export default {
         this.$store.dispatch("createConnection", {
           username: username,
           channelProvider: window.channelProvider,
-          host: this.host
+          host: this.host,
         });
-        this.connection.on('state', () => this.setState(true))
-        this.connection.on('data', () => this.setState(true))
-        this.connection.on('newPlayer', () => this.setState(true))
+        this.connection.on("state", () => this.setState(true));
+        this.connection.on("data", () => this.setState(true));
+        this.connection.on("newPlayer", () => this.setState(true));
+        this.connection.on("playerUpdate", () => this.updatePlayerAvatar());
         return true;
       }
       return false;
@@ -408,25 +407,28 @@ export default {
       DiceManager.prepareValues(diceValues);
       return this.until(() => this.dice.every((dice) => dice.isFinished()));
     },
+    async updatePlayerAvatar() {
+      await this.pieces.get(this.currentPlayer.id).move(this.position);
+      await this.setState();
+    },
     async nextState() {
-      if(this.$swal.getState().isOpen)
-        this.$swal.close()
       this.$store.dispatch("nextState");
       await this.setState();
     },
     async setState(received = false) {
       console.log("setting new state");
+      if (received && this.$swal.getState().isOpen) this.$swal.close();
       switch (this.state.positionType) {
         case PositionType.Start:
-          console.log('in starting position, creating avatar for players')
+          console.log("in starting position, creating avatar for players");
           this.state.players.forEach((player) => this.createAvatar(player));
           break;
         case PositionType.Rolling:
-          this.$store.dispatch("rollDice", this.currentPlayer.id);
-          console.log('rolling dice')
-          console.log(this.lastRoll)
+          this.$store.dispatch("rollDice");
+          console.log("rolling dice");
+          console.log(this.lastRoll);
           await this.randomDiceThrow(this.lastRoll);
-          if(this.isCurrentPlayer) {
+          if (this.isCurrentPlayer) {
             await this.nextState();
           }
           // check doubles
@@ -442,7 +444,7 @@ export default {
             .map((i) => i + oldPosition + 1)
             .map((i) => this.squareNumToCoordinates(i));
           await this.pieces.get(this.currentPlayer.id).moveArray(steps);
-          if(this.isCurrentPlayer) {
+          if (this.isCurrentPlayer) {
             await this.nextState();
           }
           break;
@@ -465,7 +467,7 @@ export default {
         case PositionType.Maintenance:
           break;
         case PositionType.NextPlayer:
-          if(this.isCurrentPlayer && !received) {
+          if (this.isCurrentPlayer && !received) {
             this.$store.dispatch("nextPlayer");
             this.connection.updateChannel(this.$store.getters.getState);
           }
@@ -477,7 +479,7 @@ export default {
         case PositionType.End:
           break;
       }
-      console.log('setstate finished')
+      console.log("setstate finished");
     },
   },
   beforeDestroy: function () {
@@ -487,7 +489,9 @@ export default {
     window.channelProvider
       .mountWalletComponent("https://xstate-wallet-v-0-3-0.statechannels.org/")
       .then(() => {
-        window.channelProvider.enable();
+        window.channelProvider.enable().then(() => {
+          this.ready = true;
+        })
       });
 
     this.three.renderers.css = new CSS3DRenderer();

@@ -22,10 +22,23 @@ export default {
   },
   computed: {
     ...mapGetters({
+      getProperty: "getProperty",
       player: "getCurrentPlayer",
     }),
+    property() {
+      return this.getProperty(this.name);
+    },
     tax() {
       return this.$store.getters.getTax;
+    },
+    buttons() {
+      let options = {};
+      if (this.isCurrentPlayer && this.player.position == this.property.id) {
+        options.ok = true;
+      } else {
+        options.cancel = true;
+      }
+      return options;
     },
   },
   methods: {
@@ -33,7 +46,7 @@ export default {
       this.$store.dispatch("freeParking");
     },
     async popup() {
-      await this.$swal({
+      const claim = await this.$swal({
         content: this.$strToHtml(
           `<div class="flex flex-row justify-center p-4"><i class="fa fa-car fa-5x text-${this.color}"></i></div>
                 <div class="swal-title text-${this.color}">${this.name}</div>
@@ -47,7 +60,7 @@ export default {
         ),
         className: "normal-case",
       });
-      this.action();
+      if (claim) this.action();
     },
   },
 };

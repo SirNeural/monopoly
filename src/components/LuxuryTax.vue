@@ -22,8 +22,7 @@ export default {
   },
   computed: {
     ...mapGetters({
-      self: "getSelfAddress",
-      player: "getCurrentPlayer",
+      isCurrentPlayer: "getSelfIsCurrentPlayer"
     }),
   },
   methods: {
@@ -34,7 +33,7 @@ export default {
         className: "normal-case",
         icon: "warning",
       });
-      if (this.self == this.player.id) this.store.dispatch("luxuryTax");
+      if (this.isCurrentPlayer) this.store.dispatch("luxuryTax");
     },
   },
 };

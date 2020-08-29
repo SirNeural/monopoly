@@ -21,9 +21,9 @@ export default {
   },
   computed: {
     ...mapGetters({
-      self: "getSelfAddress",
       player: "getCurrentPlayer",
       card: "getChance",
+      isCurrentPlayer: "getSelfIsCurrentPlayer"
     }),
   },
   methods: {
@@ -51,11 +51,8 @@ export default {
         ),
         className: "normal-case",
       });
-      if (this.self == this.player.id) {
-        this.$store.dispatch("drawCard", {
-          address: this.player.id,
-          type: "chance",
-        });
+      if (this.isCurrentPlayer) {
+        this.$store.dispatch("drawCard", "chance");
       }
     },
   },

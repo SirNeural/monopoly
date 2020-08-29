@@ -611,8 +611,16 @@ contract Monopoly is ForceMoveApp {
             playerSpace.spaceType == SpaceType.Utility
         ) {
             if (playerSpace.status == PropertyStatus.Unowned && arrayContains(turn.purchased, playerSpace.id)) {
+                uint256 price;
+                if(playerSpace.spaceType == SpaceType.Railroad) {
+                    price = 200;
+                } else if (playerSpace.spaceType == SpaceType.Utility) {
+                    price = 150;
+                } else {
+                    price = playerSpace.prices[0];
+                }
                 toGameState.players[fromGameState.currentPlayer]
-                    .balance -= playerSpace.prices[0];
+                    .balance -= price;
                 toGameState.spaces[player.position].owner = player.id;
                 toGameState.spaces[player.position].status == PropertyStatus.Owned;
                 bool monopoly = spacePartOfMonopoly(toGameState, toGameState.spaces[player.position]);

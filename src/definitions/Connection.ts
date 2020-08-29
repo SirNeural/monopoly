@@ -185,7 +185,7 @@ export class Connection extends EventEmitter {
                 break;
             }
             case 'vuex':
-                this.emit('data', data.data);
+                this.emit('data', data.data, conn.metadata.signingAddress);
                 break;
         }
     }

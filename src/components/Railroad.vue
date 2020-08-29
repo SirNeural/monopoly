@@ -28,34 +28,51 @@
 <script>
 import { mapGetters } from "vuex";
 export default {
-    props: { name: String, long: Boolean },
-    data() {
-        return {
-            price: 200,
-            mortgage: 100,
-            rent: [25, 50, 100, 200],
-            color: "gray-800",
-            active: false
-        };
+  props: { name: String, long: Boolean },
+  data() {
+    return {
+      price: 200,
+      mortgage: 100,
+      rent: [25, 50, 100, 200],
+      color: "gray-800",
+      active: false,
+    };
+  },
+  computed: {
+    ...mapGetters({
+      self: "getSelfAddress",
+      player: "getCurrentPlayer",
+      getProperty: "getProperty",
+      propertyOwner: "getPropertyOwner",
+      currentPlayerPosition: "getCurrentPlayerPosition",
+      isCurrentPlayer: "getSelfIsCurrentPlayer",
+    }),
+    property() {
+      return this.getProperty(this.name);
     },
-    computed: {
-        ...mapGetters({
-            player: "getCurrentPlayer",
-            self: "getSelfAddress",
-            propertyOwner: "getPropertyOwner",
-            currentPlayerPosition: "getCurrentPlayerPosition",
-        }),
-        owner() {
-            return this.propertyOwner(this.name);
-        },
-        isCurrentPlayer() {
-            return this.player.id == this.self;
-        },
+    owner() {
+      return this.propertyOwner(this.name);
     },
-    methods: {
-        async popup() {
-            const buy = await this.$swal({
-                content: this.$strToHtml(`
+    buttons() {
+      let options = {};
+      options.cancel = true;
+      if (this.isCurrentPlayer) {
+        if (this.owner && this.owner == this.self) options.manage = true;
+        else if (this.player.position == this.property.id) {
+          if (!this.owner) {
+            options.buy = true;
+          } else {
+            options.rent = true;
+          }
+        }
+      }
+      return options;
+    },
+  },
+  methods: {
+    async popup() {
+      const buy = await this.$swal({
+        content: this.$strToHtml(`
                 <div class="flex flex-row justify-center p-4"><svg
                     class="w-16 h-16 text-${this.color} fill-current"
                     xmlns="http://www.w3.org/2000/svg"
@@ -73,9 +90,7 @@ export default {
                         </g>
                     </g>
                 </svg></div>
-                <div class="swal-title text-${this.color}">${this.name} - $${
-                    this.price
-                }</div>
+                <div class="swal-title text-${this.color}">${this.name} - $${this.price}</div>
                 <div class="flex flex-col text-center">
                             <div class="flex flex-row justify-between text-lg font-medium">
                             <div>
@@ -108,44 +123,31 @@ export default {
                             <div>$${this.mortgage}</div>
                             </div>
                             </div>`),
-                className: "normal-case",
-                buttons: {
-                    cancel: true,
-                    [this.owner ? (this.isCurrentPlayer ? 'manage' : 'rent') : 'buy']: true
-                }
-            });
-            if (!this.owner && this.isCurrentPlayer && buy) {
-                this.$store.dispatch("buyProperty", {
-                    propertyName: this.name,
-                    address: this.player.id
-                });
-                this.$swal({
-                    title: "Congratulations!",
-                    text: `You now own ${this.name}!`,
-                    icon: "success",
-                    className: "normal-case"
-                });
-            } else if (this.isCurrentPlayer && this.owner){
-                if(this.owner == this.self) {
-                    // house management
-                } else {
-                    this.$swal({
-                        title: "Rent Paid!",
-                        text: `You have paid the rent due on ${this.name}!`,
-                        icon: "success",
-                        className: "normal-case"
-                    });
-                    this.$store.dispatch("rentRailroad", {propertyName: this.name, address: this.player.id});
-                }
-            } else {
-                this.$swal({
-                    title: "Sorry!",
-                    text: `There was a problem purchasing ${this.name}!`,
-                    icon: "error",
-                    className: "normal-case"
-                });
-            }
+        className: "normal-case",
+        buttons: this.buttons,
+      });
+      if (!this.owner && this.isCurrentPlayer && buy) {
+        this.$store.dispatch("buyProperty", this.name);
+        this.$swal({
+          title: "Congratulations!",
+          text: `You now own ${this.name}!`,
+          icon: "success",
+          className: "normal-case",
+        });
+      } else if (this.isCurrentPlayer && this.owner) {
+        if (this.owner == this.self) {
+          // house management
+        } else {
+          this.$swal({
+            title: "Rent Paid!",
+            text: `You have paid the rent due on ${this.name}!`,
+            icon: "success",
+            className: "normal-case",
+          });
+          this.$store.dispatch("rentRailroad", this.name);
         }
-    }
+      }
+    },
+  },
 };
 </script>

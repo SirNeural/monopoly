@@ -14,8 +14,9 @@ export default function syncPlugin (connection) {
             'freeParking',
             'nextState',
         ]
-        connection.on('data', data => {
-            store.dispatch(data.type, data.payload)
+        connection.on('data', (data, from) => {
+            if(from == store.getters.getCurrentPlayer.id)
+                store.dispatch(data.type, data.payload)
         })
         connection.on('state', data => {
             store.replaceState(Object.assign(store.state, { state: data.state, turns: data.turns }))

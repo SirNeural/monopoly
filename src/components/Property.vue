@@ -28,12 +28,25 @@ export default {
       getProperty: "getProperty",
       monopolies: "getCurrentPlayerMonopolies",
       propertyOwner: "getPropertyOwner",
+      isCurrentPlayer: "getSelfIsCurrentPlayer",
     }),
     owner() {
       return this.propertyOwner(this.name);
     },
-    isCurrentPlayer() {
-      return this.player.id == this.self;
+    buttons() {
+      let options = {};
+      options.cancel = true;
+      if (this.isCurrentPlayer) {
+        if (this.owner && this.owner == this.self) options.manage = true;
+        else if (this.player.position == this.property.id) {
+          if (!this.owner) {
+            options.buy = true;
+          } else {
+            options.rent = true;
+          }
+        }
+      }
+      return options;
     },
   },
   props: {
@@ -102,20 +115,10 @@ export default {
                             </div>
                             </div>`),
         className: "normal-case",
-        buttons: {
-          cancel: true,
-          [this.owner
-            ? this.isCurrentPlayer
-              ? "manage"
-              : "rent"
-            : "buy"]: true,
-        },
+        buttons: this.buttons,
       });
       if (!this.owner && this.isCurrentPlayer && buy) {
-        this.$store.dispatch("buyProperty", {
-          propertyName: this.name,
-          address: this.player.id,
-        });
+        this.$store.dispatch("buyProperty", this.name);
         this.$swal({
           title: "Congratulations!",
           text: `You now own ${this.name}!`,
@@ -132,18 +135,8 @@ export default {
             icon: "success",
             className: "normal-case",
           });
-          this.$store.dispatch("rentProperty", {
-            propertyName: this.name,
-            address: this.player.id,
-          });
+          this.$store.dispatch("rentProperty", this.name);
         }
-      } else {
-        this.$swal({
-          title: "Sorry!",
-          text: `There was a problem purchasing ${this.name}!`,
-          icon: "error",
-          className: "normal-case",
-        });
       }
     },
   },
