@@ -142,6 +142,14 @@ export class Connection extends EventEmitter {
         await this.client.updateChannel(this.channelId, this.allocations, state);
     }
 
+    async closeChannel () {
+        await this.client.closeChannel(this.channelId);
+    }
+
+    async challengeChannel () {
+        await this.client.challengeChannel(this.channelId);
+    }
+
     public joinRoom (roomId: string) {
         if (!this.participants.has(roomId)) {
             const conn = this.self.connect(roomId, { metadata: { name: this.name, destinationAddress: this.provider.destinationAddress, signingAddress: this.provider.signingAddress } });

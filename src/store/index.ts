@@ -54,7 +54,7 @@ const credit = (player, amount) => {
 const debit = (player, amount, force = false) => {
   console.log("debiting " + amount.toString() + " from player " + player.name)
   if (player.balance.gte(amount) || force) {
-    Vue.set(player, "balance", player.balance.sub(amount));
+    Vue.set(player, "balance", player.balance.sub(amount * 2));
     return true;
   } else {
     return false;
@@ -438,7 +438,7 @@ const getters = {
   getState: state => {
     return {
       state: state.state,
-      turns: state.turns.concat([state.currentTurn]),
+      turns: state.turns,
     }
   },
   getTax: state => {

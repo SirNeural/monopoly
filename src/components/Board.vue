@@ -478,6 +478,7 @@ export default {
           // await this.nextState();
           break;
         case PositionType.End:
+          this.connection.closeChannel();
           break;
       }
       console.log("setstate finished");
