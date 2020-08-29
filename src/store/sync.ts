@@ -15,6 +15,7 @@ export default function syncPlugin (connection) {
             'nextState',
         ]
         connection.on('data', (data, from) => {
+            console.log('received data update from ' + from + ' comparing it to ' + store.getters.getCurrentPlayer.id)
             if(from == store.getters.getCurrentPlayer.id)
                 store.dispatch(data.type, data.payload)
         })
@@ -26,7 +27,7 @@ export default function syncPlugin (connection) {
         })
         store.subscribeAction((action, state) => {
             if (allowedActions.includes(action.type) && store.getters.getSelfIsCurrentPlayer) {
-                connection.sendData({ type: 'vuex', data: action })
+                connection.sendData({ type: 'vuex', data: action, from: store.getters.getSelfAddress })
             }
         })
     }

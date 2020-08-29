@@ -188,7 +188,8 @@ contract Monopoly is ForceMoveApp {
         if(fromGameState.positionType == PositionType.Start) {
             return Rolling(fromGameState, turn);
         } else if(fromGameState.positionType == PositionType.Rolling) {
-            if(fromGameState.players[fromGameState.currentPlayer].jailed == 0) {
+            uint8[2] memory roll = getRoll(fromGameState);
+            if(fromGameState.players[fromGameState.currentPlayer].jailed == 0 || fromGameState.players[fromGameState.currentPlayer].doublesRolled < 3 && roll[0] == roll[1]) {
                 return Moving(fromGameState, turn);
             } else {
                 return NextPlayer(fromGameState, turn);
@@ -382,8 +383,10 @@ contract Monopoly is ForceMoveApp {
         uint8[2] memory roll = getRoll(toGameState);
         if (roll[0] == roll[1]) {
             toGameState.players[toGameState.currentPlayer].doublesRolled += 1;
-            if(toGameState.players[fromGameState.currentPlayer].doublesRolled == 3)
+            if(toGameState.players[fromGameState.currentPlayer].doublesRolled >= 3) {
                 toGameState.players[fromGameState.currentPlayer].jailed = 1;
+                toGameState.players[fromGameState.currentPlayer].position = 10;
+            }
         }
         return toGameState;
     }

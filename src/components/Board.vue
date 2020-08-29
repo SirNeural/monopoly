@@ -408,6 +408,7 @@ export default {
       return this.until(() => this.dice.every((dice) => dice.isFinished()));
     },
     async updatePlayerAvatar() {
+      console.log('moving player piece')
       await this.pieces.get(this.currentPlayer.id).move(this.position);
       await this.setState();
     },

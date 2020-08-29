@@ -38,7 +38,7 @@ const state = {
   },
   turns: [],
   currentTurn: {
-    player: 0,
+    player: bigNumberify(0),
     purchased: [],
     mortgaged: [],
     unmortgaged: [],
@@ -72,7 +72,7 @@ const mutations = {
         // rolling
         break;
       case PositionType.Rolling:
-        if (state.state.players[state.state.currentPlayer.toNumber()].jailed == 0) {
+        if (state.state.players[state.state.currentPlayer.toNumber()].jailed == 0 || (state.state.players[state.state.currentPlayer.toNumber()].jailed < 3 && rand(state.state.nonce.toNumber(), state.state.players[state.state.currentPlayer.toNumber()].id, state.state.channelId, 0, 6) == rand(state.state.nonce.toNumber(), state.state.players[state.state.currentPlayer.toNumber()].id, state.state.channelId, 1, 6))) {
           Vue.set(state.state, "positionType", PositionType.Moving);
         } else {
           Vue.set(state.state, "positionType", PositionType.NextPlayer);
@@ -301,13 +301,22 @@ const mutations = {
       rand(state.state.nonce.toNumber(), player.id, state.state.channelId, 0, 6) + 1,
       rand(state.state.nonce.toNumber(), player.id, state.state.channelId, 1, 6) + 1
     ];
-    const spaces = roll.reduce((total, num) => {
-      return total + num;
-    }, 0);
-    if ((player.position + spaces) % 40 < player.position && spaces > 0) {
-      credit(player, 200);
+    if (roll[0] == roll[1]) {
+      Vue.set(player, "doublesRolled", player.doublesRolled + 1);
     }
-    Vue.set(player, "position", player.position + spaces);
+    if (player.doublesRolled >= 3) {
+      Vue.set(player, "jailed", 1);
+      Vue.set(player, "position", 10);
+      state.connection.emit('playerUpdate');
+    } else {
+      const spaces = roll.reduce((total, num) => {
+        return total + num;
+      }, 0);
+      if ((player.position + spaces) % 40 < player.position && spaces > 0) {
+        credit(player, 200);
+      }
+      Vue.set(player, "position", player.position + spaces);
+    }
   },
   NEXT_NONCE: (state) => {
     Vue.set(state.state, "nonce", state.state.nonce.add(1));
@@ -318,6 +327,15 @@ const mutations = {
       nextPlayer++;
     }
     Vue.set(state.state, "currentPlayer", bigNumberify(nextPlayer));
+    Vue.set(state, "turns", state.turns.concat([state.currentTurn]));
+    Vue.set(state, "currentTurn", {
+      player: bigNumberify(nextPlayer),
+      purchased: [],
+      mortgaged: [],
+      unmortgaged: [],
+      housesAdded: [],
+      housesRemoved: []
+    });
   },
   JAIL_PLAYER: (state) => {
     const player = state.state.players[state.state.currentPlayer.toNumber()];
@@ -503,7 +521,7 @@ const getters = {
     return state.state.communityChest[rand(state.state.nonce.toNumber(), state.state.players[state.state.currentPlayer.toNumber()].id, state.state.channelId, 2, state.state.communityChest.length)];
   },
   getChance: state => {
-    return state.state.communityChest[rand(state.state.nonce.toNumber(), state.state.players[state.state.currentPlayer.toNumber()].id, state.state.channelId, 2, state.state.chance.length)];
+    return state.state.chance[rand(state.state.nonce.toNumber(), state.state.players[state.state.currentPlayer.toNumber()].id, state.state.channelId, 2, state.state.chance.length)];
   },
   getDiceRoll: state => {
     return state.state.players.length > 0 ? [0, 1].map(i => rand(state.state.nonce.toNumber(), state.state.players[state.state.currentPlayer.toNumber()].id, state.state.channelId, i, 6) + 1) : [];
