@@ -27,6 +27,7 @@
 
 <script>
 import { mapGetters } from "vuex";
+import { PropertyStatus } from "../definitions/types";
 export default {
   props: { name: String, long: Boolean },
   data() {
@@ -144,8 +145,35 @@ export default {
           });
         }
       } else if (this.isCurrentPlayer && this.owner) {
-        if (this.owner == this.self) {
-          // house management
+        if (this.owner == this.self && buy) {
+          const action = this.$swal({
+            title: "Property Management",
+            className: "normal-case",
+            icon: "info",
+            buttons: {
+              cancel: true,
+              ...(this.property.status == PropertyStatus.Owned && {
+                mortgage: true,
+              }),
+              ...(this.property.status == PropertyStatus.Mortgaged && {
+                unmortgage: true,
+              }),
+            },
+          });
+          switch (action) {
+            case "mortgage":
+              this.$store.dispatch("mortgageProperty", this.name);
+              break;
+            case "unmortgage":
+              this.$store.dispatch("unmortgageProperty", this.name);
+              break;
+          }
+          this.$swal({
+            title: "Success!",
+            text: `You have modified ${this.name}!`,
+            icon: "success",
+            className: "normal-case",
+          });
         } else {
           this.$swal({
             title: "Rent Paid!",

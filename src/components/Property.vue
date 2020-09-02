@@ -118,7 +118,7 @@ export default {
         buttons: this.buttons,
       });
       if (!this.owner && this.isCurrentPlayer && buy) {
-        if(this.player.balance.gte(this.property.prices[0])) {
+        if (this.player.balance.gte(this.property.prices[0])) {
           this.$store.dispatch("buyProperty", this.name);
           this.$swal({
             title: "Congratulations!",
@@ -135,8 +135,53 @@ export default {
           });
         }
       } else if (this.isCurrentPlayer && this.owner) {
-        if (this.owner == this.self) {
-          // house management
+        if (this.owner == this.self && buy) {
+          const action = this.$swal({
+            title: "Property Management",
+            className: "normal-case",
+            icon: "info",
+            buttons: {
+              cancel: true,
+              ...(this.property.status >= PropertyStatus.Monopoly &&
+                this.propertyStatus != PropertyStatus.Mortgaged && {
+                  addHouse: {
+                    text: "+ House",
+                  },
+                }),
+              ...(this.property.status >= PropertyStatus.Monopoly &&
+                this.propertyStatus != PropertyStatus.Mortgaged && {
+                  removeHouse: {
+                    text: "- House",
+                  },
+                }),
+              ...(this.property.status == PropertyStatus.Owned && {
+                mortgage: true,
+              }),
+              ...(this.property.status == PropertyStatus.Mortgaged && {
+                unmortgage: true,
+              }),
+            },
+          });
+          switch(action) {
+            case 'mortgage':
+                this.$store.dispatch('mortgageProperty', this.name);
+                break;
+            case 'unmortgage':
+                this.$store.dispatch('unmortgageProperty', this.name);
+                break;
+            case 'addHouse':
+                this.$store.dispatch('addHouse', this.name);
+                break;
+            case 'removeHouse':
+                this.$store.dispatch('removeHouse', this.name);
+                break;
+          }
+          this.$swal({
+            title: "Success!",
+            text: `You have modified ${this.name}!`,
+            icon: "success",
+            className: "normal-case",
+          });
         } else {
           this.$swal({
             title: "Rent Paid!",

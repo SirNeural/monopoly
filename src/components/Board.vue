@@ -166,8 +166,8 @@ export default {
     //   this.elements[old].componentInstance.active = false;
     //   this.elements[value].componentInstance.popup();
     // },
-    angle(value) {
-      this.three.controls.rotate(value);
+    angle(value, old) {
+      this.three.controls.rotate(value - old);
       this.three.controls.update();
     },
   },
@@ -200,7 +200,7 @@ export default {
         this.connection.on("state", () => this.setState(true));
         this.connection.on("data", () => this.setState(true));
         this.connection.on("newPlayer", () => this.setState(true));
-        this.connection.on("playerUpdate", () => this.updatePlayerAvatar());
+        this.connection.on("playerUpdate", (oldPosition) => this.updatePlayerAvatar(oldPosition));
         return true;
       }
       return false;
@@ -407,10 +407,15 @@ export default {
       DiceManager.prepareValues(diceValues);
       return this.until(() => this.dice.every((dice) => dice.isFinished()));
     },
-    async updatePlayerAvatar() {
+    async updatePlayerAvatar(oldPosition) {
       console.log('update from vuex detected')
       await this.pieces.get(this.currentPlayer.id).move(this.position);
-      await this.setState();
+      let side = Math.floor(this.position / 10);
+      this.angle += (Math.PI * side) / 2;
+      this.elements[this.position].componentInstance.active = true;
+      this.elements[oldPosition].componentInstance.active = false;
+      this.elements[this.position].componentInstance.popup();
+      // await this.setState();
     },
     async nextState() {
       this.$store.dispatch("nextState");

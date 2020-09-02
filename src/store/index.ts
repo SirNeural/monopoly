@@ -140,6 +140,12 @@ const mutations = {
     ) {
       Vue.set(property, "owner", player.id);
       Vue.set(property, "status", PropertyStatus.Owned);
+      if (property.spaceType == SpaceType.Property) {
+        const propertyGroup = state.state.spaces.filter(space => space.color == property.color);
+        if (propertyGroup.reduce((prev, property) => prev && (property.owner == player.id), false)) {
+          Vue.set(property, "status", PropertyStatus.Monopoly);
+        }
+      }
       state.currentTurn.purchased.push(property.id);
     }
   },
@@ -162,8 +168,8 @@ const mutations = {
     const player = state.state.players[state.state.currentPlayer.toNumber()];
     const property = state.state.spaces.find(property => property.name == propertyName) || {};
     const propertyOwner = state.state.players.find(player => player.id == property.owner);
-    const utilities = state.state.spaces.find(property => property.spaceType == SpaceType.Railroad);
-    const railroadsOwned = utilities.filter(utility => utility.owner == property.owner).length;
+    const railroads = state.state.spaces.filter(property => property.spaceType == SpaceType.Railroad);
+    const railroadsOwned = railroads.filter(utility => utility.owner == property.owner).length;
 
     if (
       player.position == property.id &&
@@ -179,7 +185,7 @@ const mutations = {
   RENT_UTILITY: (state, propertyName) => {
     const player = state.state.players[state.state.currentPlayer.toNumber()];
     const property = state.state.spaces.find(property => property.name == propertyName) || {};
-    const utilities = state.state.spaces.find(property => property.spaceType == SpaceType.Utility);
+    const utilities = state.state.spaces.filter(property => property.spaceType == SpaceType.Utility);
     const propertyOwner = state.state.players.find(player => player.id == property.owner);
     const utilitiesOwned = utilities.filter(utility => utility.owner == property.owner).length;
     const diceRoll = [0, 1].map(i => rand(state.state.nonce.toNumber(), state.state.players[state.state.currentPlayer.toNumber()].id, state.state.channelId, i, 6) + 1).reduce((a, b) => a + b, 0);
@@ -205,9 +211,10 @@ const mutations = {
     const player = state.state.players[state.state.currentPlayer.toNumber()];
     const property = state.state.spaces.find(property => property.name == propertyName) || {};
     if (property.owner === player.id &&
+      property.spaceType == SpaceType.Property && 
       (property.status == PropertyStatus.Monopoly || property.status == PropertyStatus.Owned)
     ) {
-      credit(player, property.mortgage);
+      credit(player, property.prices[0].div(2));
       Vue.set(property, "status", PropertyStatus.Mortgaged);
       state.currentTurn.mortgaged.push(property.id);
     }
@@ -216,17 +223,47 @@ const mutations = {
     const player = state.state.players[state.state.currentPlayer.toNumber()];
     const property = state.state.spaces.find(property => property.name == propertyName) || {};
     if (property.owner === player.id &&
+      property.spaceType == SpaceType.Property && 
       property.status == PropertyStatus.Mortgaged &&
-      debit(player, property.mortgage * 1.1)
+      debit(player, property.prices[0].div(2).mul(1.1))
     ) {
       Vue.set(property, "status", PropertyStatus.Owned);
+      const propertyGroup = state.state.spaces.filter(space => space.color == property.color);
+      if (propertyGroup.reduce((prev, property) => prev && (property.owner == player.id), false)) {
+        Vue.set(property, "status", PropertyStatus.Monopoly);
+      }
       state.currentTurn.unmortgaged.push(property.id);
+    }
+  },
+  ADD_HOUSE: (state, propertyName) => {
+    const player = state.state.players[state.state.currentPlayer.toNumber()];
+    const property = state.state.spaces.find(property => property.name == propertyName) || {};
+    if (property.owner === player.id &&
+      property.spaceType == SpaceType.Property &&
+      property.status >= PropertyStatus.Monopoly &&
+      property.status < PropertyStatus.Hotel &&
+      debit(player, property.housePrice)
+    ) {
+      Vue.set(property, "status", property.status + 1);
+    }
+  },
+  REMOVE_HOUSE: (state, propertyName) => {
+    const player = state.state.players[state.state.currentPlayer.toNumber()];
+    const property = state.state.spaces.find(property => property.name == propertyName) || {};
+    if (property.owner === player.id &&
+      property.spaceType == SpaceType.Property &&
+      property.status > PropertyStatus.Monopoly &&
+      property.status != PropertyStatus.Mortgaged
+    ) {
+      Vue.set(property, "status", property.status - 1);
+      credit(player, property.housePrice.div(2))
     }
   },
   DRAW_CARD: (state, type) => {
     const player = state.state.players[state.state.currentPlayer.toNumber()];
     if ((type == "chance" && [7, 22, 36].includes(player.position)) || (type == "communityChest" && [2, 17, 33].includes(player.position))) {
       const card = state.state[type][rand(state.state.nonce.toNumber(), player.id, state.state.channelId, 2, state.state[type].length)];
+      const position = player.position;
       switch (card.action) {
         case ActionType.PayMoney:
           debit(player, card.amount);
@@ -235,32 +272,32 @@ const mutations = {
           credit(player, card.amount);
           break;
         case ActionType.PayMoneyToAll:
-          debit(player, card.amount * (state.state.players.length - 1));
+          debit(player, card.amount.mul(state.state.players.length - 1));
           state.state.players.filter(p => p.id != player.id).forEach(p => credit(p, card.amount));
           break;
         case ActionType.CollectMoneyFromAll:
           state.state.players.filter(p => p.id != player.id).forEach(p => debit(p, card.amount));
-          credit(player, card.amount * (state.state.players.length - 1));
+          credit(player, card.amount.mul(state.state.players.length - 1));
           break;
         case ActionType.GoToJail:
           Vue.set(player, "position", 10);
           Vue.set(player, "jailed", 1);
-          state.connection.emit('playerUpdate');
+          state.connection.emit('playerUpdate', position);
           break;
         case ActionType.GetOutOfJailFree:
           Vue.set(player, "getOutOfJailFreeCards", player.getOutOfJailFreeCards + 1);
           break;
         case ActionType.MoveSpaces:
           Vue.set(player, "position", player.position + card.amount.toNumber());
-          state.connection.emit('playerUpdate');
+          state.connection.emit('playerUpdate', position);
           break;
         case ActionType.MoveBackSpaces:
           Vue.set(player, "position", player.position - card.amount.toNumber());
-          state.connection.emit('playerUpdate');
+          state.connection.emit('playerUpdate', position);
           break;
         case ActionType.MoveToSpace:
           Vue.set(player, "position", card.amount.toNumber());
-          state.connection.emit('playerUpdate');
+          state.connection.emit('playerUpdate', position);
           break;
         case ActionType.MoveToNearestUtility:
           if (player.position > 28) {
@@ -271,7 +308,7 @@ const mutations = {
           } else if (player.position < 12) {
             Vue.set(player, "position", 12);
           }
-          state.connection.emit('playerUpdate');
+          state.connection.emit('playerUpdate', position);
           break;
         case ActionType.MoveToNearestRailroad:
           if (
@@ -286,7 +323,7 @@ const mutations = {
           } else if (player.position > 5) {
             Vue.set(player, "position", 15);
           }
-          state.connection.emit('playerUpdate');
+          state.connection.emit('playerUpdate', position);
           break;
         case ActionType.PropertyAssessment:
           break;
@@ -305,10 +342,11 @@ const mutations = {
       Vue.set(player, "doublesRolled", player.doublesRolled + 1);
     }
     if (player.doublesRolled >= 3) {
+      const position = player.position;
       Vue.set(player, "jailed", 1);
       Vue.set(player, "position", 10);
       Vue.set(player, "doubleRolled", 0);
-      state.connection.emit('playerUpdate');
+      state.connection.emit('playerUpdate', position);
     } else {
       const spaces = roll.reduce((total, num) => {
         return total + num;
@@ -340,10 +378,11 @@ const mutations = {
   },
   JAIL_PLAYER: (state) => {
     const player = state.state.players[state.state.currentPlayer.toNumber()];
+    const position = player.position;
     if (player.position == 30) {
       Vue.set(player, "position", 10);
       Vue.set(player, "jailed", 1);
-      state.connection.emit('playerUpdate');
+      state.connection.emit('playerUpdate', position);
     }
   },
   INCOME_TAX: (state) => {
@@ -404,6 +443,15 @@ const actions = {
   },
   mortgageProperty: (context, propertyName) => {
     context.commit("MORTGAGE_PROPERTY", propertyName);
+  },
+  unmortgageProperty: (context, propertyName) => {
+    context.commit("UNMORTGAGE_PROPERTY", propertyName);
+  },
+  addHouse: (context, propertyName) => {
+    context.commit("ADD_HOUSE", propertyName);
+  },
+  removeHouse: (context, propertyName) => {
+    context.commit("REMOVE_HOUSE", propertyName);
   },
   sellProperty: (context, propertyName) => {
     context.commit("SELL_PROPERTY", propertyName);
