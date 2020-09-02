@@ -54,7 +54,7 @@ const credit = (player, amount) => {
 const debit = (player, amount, force = false) => {
   console.log("debiting " + amount.toString() + " from player " + player.name)
   if (player.balance.gte(amount) || force) {
-    Vue.set(player, "balance", player.balance.sub(amount * 2));
+    Vue.set(player, "balance", player.balance.sub(amount));
     return true;
   } else {
     return false;
@@ -307,6 +307,7 @@ const mutations = {
     if (player.doublesRolled >= 3) {
       Vue.set(player, "jailed", 1);
       Vue.set(player, "position", 10);
+      Vue.set(player, "doubleRolled", 0);
       state.connection.emit('playerUpdate');
     } else {
       const spaces = roll.reduce((total, num) => {

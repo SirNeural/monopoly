@@ -127,13 +127,22 @@ export default {
         buttons: this.buttons,
       });
       if (!this.owner && this.isCurrentPlayer && buy) {
-        this.$store.dispatch("buyProperty", this.name);
-        this.$swal({
-          title: "Congratulations!",
-          text: `You now own ${this.name}!`,
-          icon: "success",
-          className: "normal-case",
-        });
+        if(this.player.balance >= this.property.prices[0]) {
+          this.$store.dispatch("buyProperty", this.name);
+          this.$swal({
+            title: "Congratulations!",
+            text: `You now own ${this.name}!`,
+            icon: "success",
+            className: "normal-case",
+          });
+        } else {
+          this.$swal({
+            title: "Insufficient Funds!",
+            text: `Sorry! You don't have enough money to purchase ${this.name}!`,
+            icon: "error",
+            className: "normal-case",
+          });
+        }
       } else if (this.isCurrentPlayer && this.owner) {
         if (this.owner == this.self) {
           // house management

@@ -20,9 +20,9 @@
 
     <div class="flex flex-col flex-wrap min-h-screen justify-around m-8 pb-12" ref="control">
       <div class="flex flex-col items-start">
-        <button v-show="ready" class="p-2 select-none text-xl text-white" @click="joinRoom">Join Room</button>
-        <button v-show="ready" class="p-2 select-none text-xl text-white" @click="createRoom">Create Room</button>
-        <button v-show="ready && host" class="p-2 select-none text-xl text-white" @click="startGame">Start Game</button>
+        <button v-show="ready && !connection.running" class="p-2 select-none text-xl text-white" @click="joinRoom">Join Room</button>
+        <button v-show="ready && !connection.running" class="p-2 select-none text-xl text-white" @click="createRoom">Create Room</button>
+        <button v-show="ready && host && !connection.running" class="p-2 select-none text-xl text-white" @click="startGame">Start Game</button>
         <button class="p-2 select-none text-xl text-white" @click="rotate">Rotate</button>
         <button
           class="p-2 select-none text-xl text-white"
@@ -408,7 +408,7 @@ export default {
       return this.until(() => this.dice.every((dice) => dice.isFinished()));
     },
     async updatePlayerAvatar() {
-      console.log('moving player piece')
+      console.log('update from vuex detected')
       await this.pieces.get(this.currentPlayer.id).move(this.position);
       await this.setState();
     },
@@ -452,14 +452,14 @@ export default {
         }
         case PositionType.Action: {
           const value = this.position;
-          const old =
+          let old =
             this.position -
             this.$store.getters.getDiceRoll.reduce((a, b) => a + b, 0);
-          let delta = Math.floor(value / 10) - Math.floor(old / 10);
-          if (delta < 0) {
-            delta += 4;
+          if(old < 0) {
+            old += 40;
           }
-          this.angle += (Math.PI * delta) / 2;
+          let side = Math.floor(value / 10);
+          this.angle += (Math.PI * side) / 2;
           this.elements[value].componentInstance.active = true;
           this.elements[old].componentInstance.active = false;
           this.elements[value].componentInstance.popup();
@@ -535,28 +535,7 @@ export default {
     this.three.controls.rotateSpeed = 0.4;
     this.three.controls.update();
 
-    // let ambientLight = new THREE.AmbientLight(0xf0f5fb, 0.3);
-    // this.three.scenes.webgl.add(ambientLight);
-
-    // let mw = Math.max(window.innerHeight / 2, window.innerWidth / 2)
-    // let light = new THREE.SpotLight(0xefdfd5, 1);
-    // light.position.set(-mw / 2, mw * 2, mw / 2);
-    // light.target.position.set(0, 0, 0);
-    // light.distance = mw * 5;
-    // light.castShadow = true;
-    // light.shadowCameraNear = mw / 10;
-    // light.shadowCameraFar = mw * 5;
-    // light.shadowCameraFov = 50;
-    // light.shadowBias = 0.001;
-    // light.shadowDarkness = 1.1;
-    // light.shadowMapWidth = 1024;
-    // light.shadowMapHeight = 1024;
-    // let spotLightHelper = new THREE.SpotLightHelper(light)
-
-    // this.three.scenes.webgl.add(light);
-    // this.three.scenes.webgl.add(spotLightHelper);
     this.addLight(0, 750, 0);
-    // this.addLight(-1050, 1050, 1050);
 
     const manager = new THREE.LoadingManager();
     manager.onLoad = this.prepModelsAndAnimations.bind(this);
@@ -565,12 +544,6 @@ export default {
       const gltfLoader = new GLTFLoader(manager);
       for (const model of Object.values(this.models)) {
         gltfLoader.load(model.url, (gltf) => {
-          // let piece = gltf.scene.children[0];
-          // piece.traverse(n => { if ( n.isMesh ) {
-          //   n.castShadow = true;
-          //   n.receiveShadow = true;
-          //   if(n.material.map) n.material.map.anisotropy = 1;
-          // }});
           model.gltf = gltf;
         });
       }
@@ -578,11 +551,6 @@ export default {
 
     this.three.gameObjectManager = new GameObjectManager();
 
-    // let material = new THREE.MeshBasicMaterial();
-    // material.color.set("black");
-    // material.opacity = 0;
-    // material.side = THREE.DoubleSide;
-    // material.blending = THREE.NoBlending;
     let material = new THREE.ShadowMaterial();
     material.opacity = 0.9;
 
@@ -596,17 +564,9 @@ export default {
     this.three.board.center = new THREE.Mesh(geometry, material);
     this.three.board.outer.scale.multiplyScalar(0.755);
     this.three.board.center.receiveShadow = true;
-    // let axesHelper = new THREE.AxesHelper(50);
-    // this.three.board.center.add(axesHelper);
-
     this.three.board.outer.add(this.three.board.center);
-    // let gridHelper = new THREE.GridHelper(263,11);
-    // gridHelper.rotation.x = -Math.PI / 2;
-    // this.three.board.center.add(gridHelper);
 
     this.three.table = new CSS3DObject(this.$refs.table);
-    // this.three.table.scale.multiplyScalar(0.5);
-    // this.three.table.position.y -= 8;
     this.three.table.rotation.x = -Math.PI / 2;
 
     Object.defineProperty(this.three.board.center, "rotation", {
@@ -644,7 +604,6 @@ export default {
       dice.getObject().position.x = idx * 50;
       dice.getObject().position.z = idx * 50;
     });
-    // setInterval(this.randomDiceThrow, 3000);
     window.addEventListener("resize", this.onWindowResize);
     requestAnimationFrame(this.animate);
   },

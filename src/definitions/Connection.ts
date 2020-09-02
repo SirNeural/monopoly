@@ -19,10 +19,11 @@ export class Connection extends EventEmitter {
     private allocations;
     private avatar;
     public initialized = false;
+    public running = false;
 
     constructor() {
         super();
-        this.id = niceware.generatePassphrase(8).join('-').toLowerCase();
+        this.id = niceware.generatePassphrase(4).join('-').toLowerCase();
         this.participants = new Map();
         this.self = new Peer(this.id, {
             config: {
@@ -86,6 +87,9 @@ export class Connection extends EventEmitter {
             switch (channelState.status) {
                 case 'proposed':
                     this.client.joinChannel(this.channelId);
+                    break;
+                case 'running':
+                    this.running = true;
                     break;
             }
             this.emit('state', channelState.appData);

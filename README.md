@@ -1,47 +1,19 @@
-# Typescript Solidity Dev Starter Kit
+# Monopoly POC implemented on Ethereum Statechannels
 
-This is a starter kit for developing, testing, and deploying smart contracts with a full Typescript environment. This stack uses [Buidler](https://buidler.dev) as the platform layer to orchestrate all the tasks. [Ethers](https://docs.ethers.io/ethers.js/html/index.html) is used for all Ethereum interactions and testing.
+This is the proof of concept accompanying my honors thesis *Cryptopoly: Using Ethereum State Channels for Decentralized Game Applications* for Barrett, The Honors College.
 
 ## Using this Project
 
-Clone this repository, then install the dependencies with `npm install`. Build everything with `npm run build`. https://buidler.dev has excellent docs, and can be used as reference for extending this project.
+Clone this repository, then install the dependencies with `yarn install`. 
 
 ## Available Functionality
 
 ### Build Contracts
 
-`npm run compile`
+`yarn build:contracts`
 
-### Generate TypeChain Typings
+### Run Web Server
 
-`npm run build`
-
-### Run Contract Tests
-
-`npm run test`
-
-Note: As is, the tests fail on purpose. This is to show the Solidity stack traces that Buidler enables!
-
-### Run Coverage Report for Tests
-
-`npm run coverage`
-
-Note: The branch coverage is 75 %.
-
-### Deploy to Ethereum
-
-Create/modify network config in `buidler.config.ts` and add API key and private key, then run:
-
-`npx buidler run --network rinkeby scripts/deploy.ts`
-
-### Verify on Etherscan
-
-Add Etherscan API key to `buidler.config.ts`, then run:
-
-`npx buidler verify-contract --contract-name Counter --address <DEPLOYED ADDRESS>`
-
-## Enhancement Wish List
-
-* Better migrations strategy (Buidler working on this)
+`yarn serve`
 
 PRs and feedback welcome!
