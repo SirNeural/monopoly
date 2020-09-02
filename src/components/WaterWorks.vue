@@ -144,7 +144,7 @@ export default {
         }
       } else if (this.isCurrentPlayer && this.owner) {
         if (this.owner == this.self && buy) {
-          const action = this.$swal({
+          const action = await this.$swal({
             title: "Property Management",
             className: "normal-case",
             icon: "info",

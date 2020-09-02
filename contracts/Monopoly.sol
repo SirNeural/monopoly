@@ -556,6 +556,12 @@ contract Monopoly is ForceMoveApp {
             } else if (getCurrentPlayer(fromGameState).position > 5) {
                 toGameState.players[fromGameState.currentPlayer].position = 15;
             }
+            if (
+                toGameState.players[fromGameState.currentPlayer].position <
+                getCurrentPlayer(fromGameState).position
+            ) {
+                toGameState.players[fromGameState.currentPlayer].balance += 200;
+            }
         } else if (card.action == ActionType.PropertyAssessment) {
             // to do
         } else if (card.action == ActionType.GeneralRepairs) {
@@ -598,10 +604,16 @@ contract Monopoly is ForceMoveApp {
             toGameState.players[fromGameState.currentPlayer].position = 10; // Jail
             toGameState.players[fromGameState.currentPlayer].jailed = 1;
         } else if (playerSpace.spaceType == SpaceType.IncomeTax) {
-            toGameState.players[fromGameState.currentPlayer].balance -= 75;
-            toGameState.taxes += 75;
+            if(toGameState.players[fromGameState.currentPlayer].balance >= 2000) {
+                toGameState.players[fromGameState.currentPlayer].balance -= 200;
+                toGameState.taxes += 200;
+            } else {
+                uint256 amount = toGameState.players[fromGameState.currentPlayer].balance / 10;
+                toGameState.players[fromGameState.currentPlayer].balance -= amount;
+                toGameState.taxes += amount;
+            }
         } else if (playerSpace.spaceType == SpaceType.LuxuryTax) {
-            toGameState.players[fromGameState.currentPlayer].balance -= 200;
+            toGameState.players[fromGameState.currentPlayer].balance -= 75;
             toGameState.taxes += 75;
         } else if (playerSpace.spaceType == SpaceType.FreeParking) {
             toGameState.players[fromGameState.currentPlayer].balance += toGameState.taxes;
@@ -681,12 +693,14 @@ contract Monopoly is ForceMoveApp {
                 playerOwnsSpace(
                     fromGameState.spaces[i],
                     getCurrentPlayer(fromGameState)
-                )
+                ) &&
+                (fromGameState.spaces[i].spaceType == SpaceType.Property ||
+                fromGameState.spaces[i].spaceType == SpaceType.Utility ||
+                fromGameState.spaces[i].spaceType == SpaceType.Railroad) &&
+                (fromGameState.spaces[i].status == PropertyStatus.Monopoly || fromGameState.spaces[i].status == PropertyStatus.Owned)
             ) {
                 toGameState.players[fromGameState.currentPlayer]
-                    .balance += fromGameState.spaces[i].prices[uint256(
-                    PropertyStatus.Mortgaged
-                )];
+                    .balance += fromGameState.spaces[i].prices[0] / 2;
                 toGameState.spaces[i].status = PropertyStatus.Mortgaged;
             }
         }
@@ -695,15 +709,15 @@ contract Monopoly is ForceMoveApp {
                 playerOwnsSpace(
                     fromGameState.spaces[i],
                     getCurrentPlayer(fromGameState)
-                ) && fromGameState.spaces[i].status == PropertyStatus.Mortgaged
+                ) && 
+                (fromGameState.spaces[i].spaceType == SpaceType.Property ||
+                fromGameState.spaces[i].spaceType == SpaceType.Utility ||
+                fromGameState.spaces[i].spaceType == SpaceType.Railroad) &&
+                fromGameState.spaces[i].status == PropertyStatus.Mortgaged
             ) {
                 toGameState.players[fromGameState.currentPlayer]
-                    .balance -= (fromGameState.spaces[i].prices[uint256(
-                    PropertyStatus.Mortgaged
-                )] +
-                    (fromGameState.spaces[i].prices[uint256(
-                        PropertyStatus.Mortgaged
-                    )] / 10));
+                    .balance -= ((fromGameState.spaces[i].prices[0] / 2) +
+                    (fromGameState.spaces[i].prices[0] / 20));
                 toGameState.spaces[i].status = PropertyStatus.Owned;
                 // check for monopoly here
             }

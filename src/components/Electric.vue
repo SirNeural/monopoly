@@ -95,7 +95,7 @@ export default {
         }
       } else if (this.isCurrentPlayer && this.owner) {
         if (this.owner == this.self && buy) {
-          const action = this.$swal({
+          const action = await this.$swal({
             title: "Property Management",
             className: "normal-case",
             icon: "info",
@@ -109,13 +109,13 @@ export default {
               }),
             },
           });
-          switch(action) {
-            case 'mortgage':
-                this.$store.dispatch('mortgageProperty', this.name);
-                break;
-            case 'unmortgage':
-                this.$store.dispatch('unmortgageProperty', this.name);
-                break;
+          switch (action) {
+            case "mortgage":
+              this.$store.dispatch("mortgageProperty", this.name);
+              break;
+            case "unmortgage":
+              this.$store.dispatch("unmortgageProperty", this.name);
+              break;
           }
           this.$swal({
             title: "Success!",

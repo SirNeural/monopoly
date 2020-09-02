@@ -92,7 +92,7 @@ export function loadSpaces (spaces, properties) {
             spaceType: spaceToType(properties, space),
             status: PropertyStatus.Unowned,
             prices: Object.prototype.hasOwnProperty.call(properties, space) ? [properties[space].price].concat(properties[space].rent, [properties[space].mortgage]).map(price => bigNumberify(price)) : [],
-            housePrice: Object.prototype.hasOwnProperty.call(properties, space) ? bigNumberify(properties[space].house) : [],
+            housePrice: Object.prototype.hasOwnProperty.call(properties, space) ? bigNumberify(properties[space].house) : bigNumberify(0),
             owner: AddressZero
         };
     })

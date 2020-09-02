@@ -409,7 +409,7 @@ export default {
     },
     async updatePlayerAvatar(oldPosition) {
       console.log('update from vuex detected')
-      await this.pieces.get(this.currentPlayer.id).move(this.position);
+      // await this.pieces.get(this.currentPlayer.id).move(this.position);
       let side = Math.floor(this.position / 10);
       this.angle += (Math.PI * side) / 2;
       this.elements[this.position].componentInstance.active = true;
@@ -464,13 +464,16 @@ export default {
             old += 40;
           }
           let side = Math.floor(value / 10);
-          this.angle += (Math.PI * side) / 2;
+          this.angle = (Math.PI * side) / 2;
           this.elements[value].componentInstance.active = true;
           this.elements[old].componentInstance.active = false;
           this.elements[value].componentInstance.popup();
           break;
         }
         case PositionType.Maintenance:
+          if (this.isCurrentPlayer) {
+            await this.nextState();
+          }
           break;
         case PositionType.NextPlayer:
           if (this.isCurrentPlayer && !received) {

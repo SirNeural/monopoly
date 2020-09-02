@@ -136,22 +136,22 @@ export default {
         }
       } else if (this.isCurrentPlayer && this.owner) {
         if (this.owner == this.self && buy) {
-          const action = this.$swal({
+          const action = await this.$swal({
             title: "Property Management",
             className: "normal-case",
             icon: "info",
             buttons: {
               cancel: true,
               ...(this.property.status >= PropertyStatus.Monopoly &&
-                this.propertyStatus != PropertyStatus.Mortgaged && {
+                this.property.status < PropertyStatus.Hotel && {
                   addHouse: {
-                    text: "+ House",
+                    text: "Add House",
                   },
                 }),
               ...(this.property.status >= PropertyStatus.Monopoly &&
-                this.propertyStatus != PropertyStatus.Mortgaged && {
+                this.property.status != PropertyStatus.Mortgaged && {
                   removeHouse: {
-                    text: "- House",
+                    text: "Remove House",
                   },
                 }),
               ...(this.property.status == PropertyStatus.Owned && {
@@ -162,19 +162,19 @@ export default {
               }),
             },
           });
-          switch(action) {
-            case 'mortgage':
-                this.$store.dispatch('mortgageProperty', this.name);
-                break;
-            case 'unmortgage':
-                this.$store.dispatch('unmortgageProperty', this.name);
-                break;
-            case 'addHouse':
-                this.$store.dispatch('addHouse', this.name);
-                break;
-            case 'removeHouse':
-                this.$store.dispatch('removeHouse', this.name);
-                break;
+          switch (action) {
+            case "mortgage":
+              this.$store.dispatch("mortgageProperty", this.name);
+              break;
+            case "unmortgage":
+              this.$store.dispatch("unmortgageProperty", this.name);
+              break;
+            case "addHouse":
+              this.$store.dispatch("addHouse", this.name);
+              break;
+            case "removeHouse":
+              this.$store.dispatch("removeHouse", this.name);
+              break;
           }
           this.$swal({
             title: "Success!",

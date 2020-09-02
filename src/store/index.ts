@@ -211,10 +211,20 @@ const mutations = {
     const player = state.state.players[state.state.currentPlayer.toNumber()];
     const property = state.state.spaces.find(property => property.name == propertyName) || {};
     if (property.owner === player.id &&
-      property.spaceType == SpaceType.Property && 
+      (property.spaceType == SpaceType.Property ||
+        property.spaceType == SpaceType.Utility ||
+        property.spaceType == SpaceType.Railroad) && 
       (property.status == PropertyStatus.Monopoly || property.status == PropertyStatus.Owned)
     ) {
-      credit(player, property.prices[0].div(2));
+      let price;
+      if (property.spaceType == SpaceType.Railroad) {
+        price = bigNumberify(200).div(2);
+      } else if (property.spaceType == SpaceType.Utility) {
+        price = bigNumberify(150).div(2);
+      } else {
+        price = property.prices[0].div(2);
+      }
+      credit(player, price);
       Vue.set(property, "status", PropertyStatus.Mortgaged);
       state.currentTurn.mortgaged.push(property.id);
     }
@@ -222,10 +232,20 @@ const mutations = {
   UNMORTGAGE_PROPERTY: (state, propertyName) => {
     const player = state.state.players[state.state.currentPlayer.toNumber()];
     const property = state.state.spaces.find(property => property.name == propertyName) || {};
+    let price;
+    if (property.spaceType == SpaceType.Railroad) {
+      price = bigNumberify(200);
+    } else if (property.spaceType == SpaceType.Utility) {
+      price = bigNumberify(150);
+    } else {
+      price = property.prices[0];
+    }
     if (property.owner === player.id &&
-      property.spaceType == SpaceType.Property && 
+      (property.spaceType == SpaceType.Property || 
+      property.spaceType == SpaceType.Utility || 
+      property.spaceType == SpaceType.Railroad) && 
       property.status == PropertyStatus.Mortgaged &&
-      debit(player, property.prices[0].div(2).mul(1.1))
+      debit(player, price.div(2).add(price.div(20)))
     ) {
       Vue.set(property, "status", PropertyStatus.Owned);
       const propertyGroup = state.state.spaces.filter(space => space.color == property.color);
@@ -245,6 +265,7 @@ const mutations = {
       debit(player, property.housePrice)
     ) {
       Vue.set(property, "status", property.status + 1);
+      state.currentTurn.housesAdded.push(property.id);
     }
   },
   REMOVE_HOUSE: (state, propertyName) => {
@@ -257,6 +278,7 @@ const mutations = {
     ) {
       Vue.set(property, "status", property.status - 1);
       credit(player, property.housePrice.div(2))
+      state.currentTurn.housesRemoved.push(property.id);
     }
   },
   DRAW_CARD: (state, type) => {
@@ -296,6 +318,9 @@ const mutations = {
           state.connection.emit('playerUpdate', position);
           break;
         case ActionType.MoveToSpace:
+          if (player.position > card.amount.toNumber()) {
+            credit(player, 200);
+          }
           Vue.set(player, "position", card.amount.toNumber());
           state.connection.emit('playerUpdate', position);
           break;
@@ -322,6 +347,9 @@ const mutations = {
             Vue.set(player, "position", 25);
           } else if (player.position > 5) {
             Vue.set(player, "position", 15);
+          }
+          if (position > player.position) {
+            credit(player, 200);
           }
           state.connection.emit('playerUpdate', position);
           break;
@@ -354,7 +382,7 @@ const mutations = {
       if ((player.position + spaces) % 40 < player.position && spaces > 0) {
         credit(player, 200);
       }
-      Vue.set(player, "position", player.position + spaces);
+      Vue.set(player, "position", (player.position + spaces) % 40);
     }
   },
   NEXT_NONCE: (state) => {
@@ -388,8 +416,14 @@ const mutations = {
   INCOME_TAX: (state) => {
     const player = state.state.players[state.state.currentPlayer.toNumber()];
     if (player.position == 4) {
-      debit(player, 200, true)
-      state.state.taxes.add(200);
+      if (player.balance.gte(2000)) {
+        debit(player, 200, true)
+        state.state.taxes.add(200);
+      } else {
+        const amount = player.balance.div(10);
+        debit(player, amount, true)
+        state.state.taxes.add(amount);
+      }
     }
   },
   LUXURY_TAX: (state) => {

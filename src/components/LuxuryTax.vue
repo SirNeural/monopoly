@@ -33,7 +33,7 @@ export default {
         className: "normal-case",
         icon: "warning",
       });
-      if (this.isCurrentPlayer) this.store.dispatch("luxuryTax");
+      if (this.isCurrentPlayer) this.$store.dispatch("luxuryTax");
     },
   },
 };
