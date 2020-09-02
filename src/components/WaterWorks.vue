@@ -125,7 +125,7 @@ export default {
       });
 
       if (!this.owner && this.isCurrentPlayer && buy) {
-        if(this.player.balance >= this.property.prices[0]) {
+        if (this.player.balance.gte(this.property.prices[0])) {
           this.$store.dispatch("buyProperty", this.name);
           this.$swal({
             title: "Congratulations!",
