@@ -525,7 +525,7 @@ const getters = {
     }
   },
   getTax: state => {
-    return state.state.taxes.toNumber();
+    return state.state.taxes;
   },
   getSpaces: state => {
     return state.state.spaces || false; // mapstate

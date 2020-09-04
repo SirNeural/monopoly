@@ -24,12 +24,10 @@ export default {
     ...mapGetters({
       getProperty: "getProperty",
       player: "getCurrentPlayer",
+      tax: "getTax",
     }),
     property() {
       return this.getProperty(this.name);
-    },
-    tax() {
-      return this.$store.getters.getTax;
     },
     buttons() {
       let options = {};
