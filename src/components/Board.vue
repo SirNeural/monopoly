@@ -409,7 +409,7 @@ export default {
     },
     async updatePlayerAvatar(oldPosition) {
       console.log('update from vuex detected')
-      // await this.pieces.get(this.currentPlayer.id).move(this.position);
+      await this.pieces.get(this.currentPlayer.id).move(this.position);
       let side = Math.floor(this.position / 10);
       this.angle += (Math.PI * side) / 2;
       this.elements[this.position].componentInstance.active = true;
@@ -445,7 +445,10 @@ export default {
             (a, b) => a + b,
             0
           );
-          const oldPosition = newPosition - delta;
+          let oldPosition = newPosition - delta;
+          if(oldPosition < 0) {
+            oldPosition += 40;
+          }
           const steps = [...Array(delta).keys()]
             .map((i) => i + oldPosition + 1)
             .map((i) => this.squareNumToCoordinates(i));
@@ -480,6 +483,7 @@ export default {
             this.$store.dispatch("nextPlayer");
             this.connection.updateChannel(this.$store.getters.getState);
           }
+          this.angle = (Math.PI * Math.floor(this.position)) / 2;
           // await this.nextState();
           break;
         case PositionType.Bankrupt:
