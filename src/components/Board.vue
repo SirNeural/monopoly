@@ -483,7 +483,7 @@ export default {
             this.$store.dispatch("nextPlayer");
             this.connection.updateChannel(this.$store.getters.getState);
           }
-          this.angle = (Math.PI * Math.floor(this.position)) / 2;
+          this.angle = (Math.PI * Math.floor(this.position / 10)) / 2;
           // await this.nextState();
           break;
         case PositionType.Bankrupt:
