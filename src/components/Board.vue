@@ -20,9 +20,21 @@
 
     <div class="flex flex-col flex-wrap min-h-screen justify-around m-8 pb-12" ref="control">
       <div class="flex flex-col items-start">
-        <button v-show="ready && !connection.running" class="p-2 select-none text-xl text-white" @click="joinRoom">Join Room</button>
-        <button v-show="ready && !connection.running" class="p-2 select-none text-xl text-white" @click="createRoom">Create Room</button>
-        <button v-show="ready && host && !connection.running" class="p-2 select-none text-xl text-white" @click="startGame">Start Game</button>
+        <button
+          v-show="ready && !connection.running"
+          class="p-2 select-none text-xl text-white"
+          @click="joinRoom"
+        >Join Room</button>
+        <button
+          v-show="ready && !connection.running"
+          class="p-2 select-none text-xl text-white"
+          @click="createRoom"
+        >Create Room</button>
+        <button
+          v-show="ready && host && !connection.running"
+          class="p-2 select-none text-xl text-white"
+          @click="startGame"
+        >Start Game</button>
         <button class="p-2 select-none text-xl text-white" @click="rotate">Rotate</button>
         <button
           class="p-2 select-none text-xl text-white"
@@ -200,7 +212,9 @@ export default {
         this.connection.on("state", () => this.setState(true));
         this.connection.on("data", () => this.setState(true));
         this.connection.on("newPlayer", () => this.setState(true));
-        this.connection.on("playerUpdate", (oldPosition) => this.updatePlayerAvatar(oldPosition));
+        this.connection.on("playerUpdate", (oldPosition) =>
+          this.updatePlayerAvatar(oldPosition)
+        );
         return true;
       }
       return false;
@@ -304,7 +318,7 @@ export default {
         ];
         const name = animalModelNames.includes(player.avatar)
           ? player.avatar
-          : "pig";
+          : animalModelNames[player.id.charCodeAt(2) % animalModelNames.length];
         const gameObject = this.three.gameObjectManager.createGameObject(
           this.three.board.outer,
           name,
@@ -408,7 +422,7 @@ export default {
       return this.until(() => this.dice.every((dice) => dice.isFinished()));
     },
     async updatePlayerAvatar(oldPosition) {
-      console.log('update from vuex detected')
+      console.log("update from vuex detected");
       await this.pieces.get(this.currentPlayer.id).move(this.position);
       let side = Math.floor(this.position / 10);
       this.angle += (Math.PI * side) / 2;
@@ -446,7 +460,7 @@ export default {
             0
           );
           let oldPosition = newPosition - delta;
-          if(oldPosition < 0) {
+          if (oldPosition < 0) {
             oldPosition += 40;
           }
           const steps = [...Array(delta).keys()]
@@ -463,7 +477,7 @@ export default {
           let old =
             this.position -
             this.$store.getters.getDiceRoll.reduce((a, b) => a + b, 0);
-          if(old < 0) {
+          if (old < 0) {
             old += 40;
           }
           let side = Math.floor(value / 10);
@@ -505,7 +519,7 @@ export default {
       .then(() => {
         window.channelProvider.enable().then(() => {
           this.ready = true;
-        })
+        });
       });
 
     this.three.renderers.css = new CSS3DRenderer();
