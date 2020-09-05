@@ -66,6 +66,14 @@
         </div>
       </div>
     </div>
+    <div class="flex flex-row right-0 m-6" ref="links">
+      <a href="https://github.com/SirNeural/monopoly" target="_blank" class="flex flex-row normal-case text-white text-lg px-6 select-none">
+        Code
+      </a>
+      <a href="/Cryptopoly.pdf" target="_blank" class="flex flex-row normal-case text-white text-lg pr-8 select-none">
+        Paper
+      </a>
+    </div>
   </div>
 </template>
 
@@ -423,7 +431,7 @@ export default {
     },
     async updatePlayerAvatar(oldPosition) {
       console.log("update from vuex detected");
-      await this.pieces.get(this.currentPlayer.id).move(this.position);
+      await this.pieces.get(this.currentPlayer.id).move(this.squareNumToCoordinates(this.position));
       let side = Math.floor(this.position / 10);
       this.angle += (Math.PI * side) / 2;
       this.elements[this.position].componentInstance.active = true;
@@ -600,6 +608,7 @@ export default {
     });
 
     this.three.control = new CSS3DSprite(this.$refs.control);
+    this.three.links = new CSS3DSprite(this.$refs.links);
 
     this.three.scenes.webgl.add(this.three.board.outer);
 
