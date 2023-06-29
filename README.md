@@ -1,6 +1,10 @@
-# Monopoly POC implemented on Ethereum Statechannels
+# Cryptopoly: Decentralized Monopoly POC using Ethereum Statechannels
 
-This is the proof of concept accompanying my honors thesis *Cryptopoly: Using Ethereum State Channels for Decentralized Game Applications* for Barrett, The Honors College.
+This is the official code implementation accompanying my honors thesis *Cryptopoly: Using Ethereum State Channels for Decentralized Game Applications* for Barrett, The Honors College.
+
+Play the game here: https://monopoly.vercel.app
+
+Note: You will need Metamask installed with the Goerli test chain initialized.
 
 ## Using this Project
 
